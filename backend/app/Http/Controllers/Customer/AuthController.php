@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminRefreshRequest;
+use App\Http\Requests\B2BLoginRequest;
+use App\Http\Requests\B2BRegisterRequest;
 use App\Http\Requests\SendOtpRequest;
 use App\Http\Requests\VerifyOtpRequest;
 use App\Http\Resources\CustomerResource;
@@ -50,5 +52,34 @@ class AuthController extends Controller
         $this->authService->logout($request->input('refresh_token', ''));
 
         return response()->json(['message' => 'Logged out successfully.']);
+    }
+
+    public function registerB2B(B2BRegisterRequest $request): JsonResponse
+    {
+        $result = $this->authService->registerB2B($request->validated());
+
+        return response()->json([
+            'customer'      => new CustomerResource($result['customer']),
+            'access_token'  => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'token_type'    => $result['token_type'],
+            'expires_in'    => $result['expires_in'],
+        ], 201);
+    }
+
+    public function loginB2B(B2BLoginRequest $request): JsonResponse
+    {
+        $result = $this->authService->loginB2B(
+            $request->validated('email'),
+            $request->validated('password'),
+        );
+
+        return response()->json([
+            'customer'      => new CustomerResource($result['customer']),
+            'access_token'  => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'token_type'    => $result['token_type'],
+            'expires_in'    => $result['expires_in'],
+        ]);
     }
 }

@@ -16,4 +16,20 @@ class EloquentCustomerRepository implements CustomerRepositoryInterface
     {
         return Customer::firstOrCreate(['phone' => $phone]);
     }
+
+    public function update(Customer $customer, array $data): Customer
+    {
+        $customer->fill($data)->save();
+        return $customer->fresh();
+    }
+
+    public function findByEmail(string $email): ?Customer
+    {
+        return Customer::where('email', $email)->first();
+    }
+
+    public function createB2B(array $data): Customer
+    {
+        return Customer::create($data);
+    }
 }

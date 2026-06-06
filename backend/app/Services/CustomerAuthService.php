@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Exceptions\BusinessRuleException;
+use App\Exceptions\ConflictException;
 use App\Models\Customer;
 use App\Repositories\Interfaces\CustomerRepositoryInterface;
 use App\Repositories\Interfaces\RefreshTokenRepositoryInterface;
 use App\Support\Concerns\IssuesTokens;
+use App\Support\Enums\CustomerType;
+use Illuminate\Support\Facades\Hash;
 
 class CustomerAuthService
 {
@@ -50,5 +53,33 @@ class CustomerAuthService
         $this->refreshTokenRepository->revoke($refreshToken);
 
         auth('api')->logout();
+    }
+
+    public function registerB2B(array $data): array
+    {
+        if ($this->customerRepository->findByEmail($data['email'])) {
+            throw new ConflictException('An account with this email already exists.');
+        }
+
+        $customer = $this->customerRepository->createB2B([
+            'name'     => $data['name'],
+            'phone'    => $data['phone'],
+            'email'    => $data['email'],
+            'password' => $data['password'],
+            'type'     => CustomerType::B2B,
+        ]);
+
+        return array_merge($this->issueTokens($customer, 'api'), ['customer' => $customer]);
+    }
+
+    public function loginB2B(string $email, string $password): array
+    {
+        $customer = $this->customerRepository->findByEmail($email);
+
+        if (! $customer || ! Hash::check($password, $customer->password)) {
+            throw new BusinessRuleException('Invalid credentials.');
+        }
+
+        return array_merge($this->issueTokens($customer, 'api'), ['customer' => $customer]);
     }
 }

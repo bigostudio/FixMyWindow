@@ -1,0 +1,482 @@
+{
+  "info": {
+    "name": "FixMyWindow API",
+    "description": "FixMyWindow (FMW) — REST API Collection\n\n**Base URL:** {{base_url}}\n\nAll requests require:\n- Content-Type: application/json\n- Accept: application/json\n\nAuthenticated requests require:\n- Authorization: Bearer {{access_token}}",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Customer Auth",
+      "item": [
+        {
+          "name": "Send OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/send-otp",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "send-otp"]
+            },
+            "description": "Send OTP to a customer phone number.\n\n**Business rules:**\n- Phone must be a valid 10-digit Indian mobile number (starts with 6–9)\n- Max 3 resend attempts per hour → 429\n- If phone is locked (5 failed verifications) → 429\n\n**Dummy OTP (non-production):** `123456`"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has access_token\", () => pm.expect(json.data.access_token).to.be.a('string'));",
+                  "if (json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data.refresh_token) {",
+                  "  pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/verify-otp",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "verify-otp"]
+            },
+            "description": "Verify OTP and receive JWT tokens.\n\nAuto-saves `access_token` and `refresh_token` to collection variables on success.\n\n**Business rules:**\n- OTP must be 6 digits\n- OTP expires in 5 minutes\n- OTP is single-use\n- 5 wrong attempts → phone locked for 15 minutes → 429\n- Creates customer if new, returns existing if already registered"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data.refresh_token) {",
+                  "  pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh-token",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh-token"]
+            },
+            "description": "Exchange refresh token for a new access token.\nOld refresh token is revoked and a new one is issued."
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('access_token', '');",
+                  "pm.collectionVariables.set('refresh_token', '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout customer. Revokes the refresh token and invalidates the JWT.\n\n**Requires:** Bearer access token in Authorization header."
+          }
+        },
+        {
+          "name": "B2B Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Type is b2b\", () => pm.expect(json.data.customer.type).to.eql('b2b'));",
+                  "if (json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data.refresh_token) {",
+                  "  pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp\",\n  \"phone\": \"9123456789\",\n  \"email\": \"acme@company.in\",\n  \"password\": \"Secret@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/b2b/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "b2b", "register"]
+            },
+            "description": "Register a new B2B customer with email + password.\n\nAuto-saves `access_token` and `refresh_token` to collection variables on success.\n\n**Business rules:**\n- `type` is automatically set to `b2b` — no role field needed\n- Duplicate email → 409\n- Password: min 8 chars, mixed case + numbers\n- Phone must be a valid 10-digit Indian mobile number"
+          }
+        },
+        {
+          "name": "B2B Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has access_token\", () => pm.expect(json.data.access_token).to.be.a('string'));",
+                  "if (json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data.refresh_token) {",
+                  "  pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"acme@company.in\",\n  \"password\": \"Secret@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/b2b/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "b2b", "login"]
+            },
+            "description": "Login as a B2B customer using email + password.\n\nAuto-saves `access_token` and `refresh_token` to collection variables on success.\n\n**Business rules:**\n- Wrong credentials → 422 (intentionally vague)\n- OTP login via `verify-otp` also works for B2B customers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Profile",
+      "item": [
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp\",\n  \"email\": \"acme@company.in\",\n  \"gst_number\": \"29ABCDE1234F1Z5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Update the authenticated customer's profile. All fields are optional.\n\n**Requires:** Bearer `access_token` in Authorization header.\n\n**Business rules:**\n- Providing `gst_number` automatically upgrades `type` from `b2c` → `b2b`\n- GST format: standard 15-char Indian GST (e.g. `29ABCDE1234F1Z5`)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has access_token\", () => pm.expect(json.data.access_token).to.be.a('string'));",
+                  "if (json.data.access_token) {",
+                  "  pm.collectionVariables.set('admin_access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data.refresh_token) {",
+                  "  pm.collectionVariables.set('admin_refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@fixmywindow.in\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "auth", "login"]
+            },
+            "description": "Login as admin staff.\n\nAuto-saves `admin_access_token` and `admin_refresh_token` to collection variables.\n\n**Seeded credentials:**\n- Email: admin@fixmywindow.in\n- Password: Admin@1234\n\n**Business rules:**\n- Wrong password → 422\n- Inactive account → 422"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.data.access_token) {",
+                  "  pm.collectionVariables.set('admin_access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data.refresh_token) {",
+                  "  pm.collectionVariables.set('admin_refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{admin_refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/refresh-token",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "auth", "refresh-token"]
+            },
+            "description": "Exchange admin refresh token for a new access token.\nOld refresh token is revoked and a new one is issued."
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('admin_access_token', '');",
+                  "pm.collectionVariables.set('admin_refresh_token', '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{admin_refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "auth", "logout"]
+            },
+            "description": "Logout admin. Revokes the refresh token and invalidates the JWT.\n\n**Requires:** Bearer access token in Authorization header."
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@fixmywindow.in\",\n  \"phone\": \"9123456789\",\n  \"password\": \"Secret@123\",\n  \"role\": \"surveyor\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"]
+            },
+            "description": "Create a new admin staff account.\n\n**Requires:** Bearer `admin_access_token` in Authorization header.\n\n**Allowed roles:** `super_admin`, `ops_admin`, `project_manager`, `surveyor`, `installer`, `qc_engineer`, `accounts`\n\n**Business rules:**\n- Only `super_admin` and `ops_admin` can call this endpoint → 403 for others\n- Duplicate email → 409\n- Password: min 8 chars, mixed case + numbers"
+          }
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"Admin@1234\",\n  \"new_password\": \"NewPass@5678\",\n  \"new_password_confirmation\": \"NewPass@5678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "auth", "change-password"]
+            },
+            "description": "Change password for the currently logged-in admin.\n\n**Requires:** Bearer access token in Authorization header.\n\n**Business rules:**\n- Wrong current password → 422\n- new_password must be min 8 chars and match confirmation"
+          }
+        }
+      ]
+    }
+  ]
+}

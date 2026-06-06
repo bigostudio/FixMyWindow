@@ -17,14 +17,18 @@ class Customer extends Authenticatable implements JWTSubject
         'email',
         'type',
         'gst_number',
+        'password',
     ];
 
-    protected $hidden = [];
+    protected $hidden = [
+        'password',
+    ];
 
     protected function casts(): array
     {
         return [
-            'type' => CustomerType::class,
+            'type'     => CustomerType::class,
+            'password' => 'hashed',
         ];
     }
 
