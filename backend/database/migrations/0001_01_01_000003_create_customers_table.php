@@ -12,9 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('phone', 15)->unique();
             $table->string('name', 150)->nullable();
-            $table->string('email', 190)->nullable();
+            $table->string('email', 190)->nullable()->unique();
             $table->enum('type', ['b2c', 'b2b'])->default('b2c')->index();
             $table->string('gst_number', 20)->nullable();
+            $table->string('password')->nullable();
             $table->timestamps();
         });
     }
