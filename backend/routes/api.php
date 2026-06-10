@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
+use App\Http\Controllers\Customer\EnquiryController as CustomerEnquiryController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -16,8 +17,11 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/b2b/login',     [CustomerAuthController::class, 'loginB2B']);
 
     Route::middleware('auth:api')->group(function () {
-        Route::post('auth/logout', [CustomerAuthController::class, 'logout']);
-        Route::put('profile',     [CustomerProfileController::class, 'update']);
+        Route::post('auth/logout',    [CustomerAuthController::class, 'logout']);
+        Route::put('profile',         [CustomerProfileController::class, 'update']);
+
+        // ─── Enquiries ────────────────────────────────────────────────
+        Route::post('enquiries/book', [CustomerEnquiryController::class, 'book']);
     });
 
     // ─── Admin Auth ───────────────────────────────────────────────────
