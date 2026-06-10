@@ -4,6 +4,7 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\Enquiry;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class EloquentEnquiryRepository implements EnquiryRepositoryInterface
@@ -24,5 +25,13 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
                       ->with(['service.category'])
                       ->latest()
                       ->get();
+    }
+
+    public function paginateByCustomer(int $customerId, int $perPage, string $sort, string $order): LengthAwarePaginator
+    {
+        return Enquiry::where('customer_id', $customerId)
+                      ->with(['service.category'])
+                      ->orderBy($sort, $order)
+                      ->paginate($perPage);
     }
 }

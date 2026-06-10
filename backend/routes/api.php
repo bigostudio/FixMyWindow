@@ -21,7 +21,9 @@ Route::prefix('v1')->group(function () {
         Route::put('profile',         [CustomerProfileController::class, 'update']);
 
         // ─── Enquiries ────────────────────────────────────────────────
-        Route::post('enquiries/book', [CustomerEnquiryController::class, 'book']);
+        Route::post('enquiries/book',      [CustomerEnquiryController::class, 'book']);
+        Route::get('enquiries',            [CustomerEnquiryController::class, 'index']);
+        Route::get('enquiries/{id}',       [CustomerEnquiryController::class, 'show']);
     });
 
     // ─── Admin Auth ───────────────────────────────────────────────────

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Enquiry;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
 use App\Repositories\Interfaces\ServiceRepositoryInterface;
 use App\Support\Enums\CustomerType;
@@ -22,6 +23,26 @@ class EnquiryService
         private readonly EnquiryRepositoryInterface         $enquiryRepository,
         private readonly ProjectTimelineRepositoryInterface $timelineRepository,
     ) {}
+
+    public function listForCustomer(int $customerId, int $perPage, string $sort, string $order): LengthAwarePaginator
+    {
+        $allowedSorts = ['created_at', 'booking_date', 'status'];
+        $sort  = in_array($sort, $allowedSorts, true) ? $sort : 'created_at';
+        $order = in_array($order, ['asc', 'desc'], true) ? $order : 'desc';
+
+        return $this->enquiryRepository->paginateByCustomer($customerId, $perPage, $sort, $order);
+    }
+
+    public function getForCustomer(int $enquiryId, int $customerId): Enquiry
+    {
+        $enquiry = $this->enquiryRepository->findById($enquiryId);
+
+        if (! $enquiry || $enquiry->customer_id !== $customerId) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        }
+
+        return $enquiry;
+    }
 
     public function book(int $customerId, string $actorName, array $data): Enquiry
     {

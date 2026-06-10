@@ -3,6 +3,7 @@
 namespace App\Repositories\Interfaces;
 
 use App\Models\Enquiry;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface EnquiryRepositoryInterface
 {
@@ -11,4 +12,6 @@ interface EnquiryRepositoryInterface
     public function findById(int $id): ?Enquiry;
 
     public function findByCustomer(int $customerId): \Illuminate\Database\Eloquent\Collection;
+
+    public function paginateByCustomer(int $customerId, int $perPage, string $sort, string $order): LengthAwarePaginator;
 }
