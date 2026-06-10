@@ -23,7 +23,7 @@ class EloquentOtpRepository implements OtpRepositoryInterface
     public function countLastHour(string $phone): int
     {
         return OtpRequest::where('phone', $phone)
-            ->where('created_at', '>', now()->subHour())
+            ->where('created_at', '>', now()->subMinute())
             ->count();
     }
 

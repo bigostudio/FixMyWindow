@@ -25,7 +25,7 @@ class OtpService
         // Check resend rate limit: max 3 per hour
         $count = $this->otpRepository->countLastHour($phone);
         if ($count >= 3) {
-            throw new RateLimitException('OTP resend limit exceeded. Please try again after an hour.');
+            throw new RateLimitException('OTP resend limit exceeded. Please try again after a minute.');
         }
 
         $otp = app()->isProduction()

@@ -24,6 +24,15 @@ class EnquiryService
         private readonly ProjectTimelineRepositoryInterface $timelineRepository,
     ) {}
 
+    public function listForAdmin(int $perPage, string $sort, string $order): LengthAwarePaginator
+    {
+        $allowedSorts = ['created_at', 'booking_date', 'status'];
+        $sort  = in_array($sort, $allowedSorts, true) ? $sort : 'created_at';
+        $order = in_array($order, ['asc', 'desc'], true) ? $order : 'desc';
+
+        return $this->enquiryRepository->paginateAll($perPage, $sort, $order);
+    }
+
     public function listForCustomer(int $customerId, int $perPage, string $sort, string $order): LengthAwarePaginator
     {
         $allowedSorts = ['created_at', 'booking_date', 'status'];

@@ -17,6 +17,7 @@ class Customer extends Authenticatable implements JWTSubject
         'email',
         'type',
         'gst_number',
+        'organisation_name',
         'password',
     ];
 

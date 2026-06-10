@@ -15,10 +15,11 @@ class B2BRegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'     => ['required', 'string', 'max:255'],
-            'phone'    => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
-            'email'    => ['required', 'email', 'max:255'],
-            'password' => ['required', Password::min(8)->mixedCase()->numbers()],
+            'name'              => ['required', 'string', 'max:255'],
+            'organisation_name' => ['required', 'string', 'max:255'],
+            'phone'             => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
+            'email'             => ['required', 'email', 'max:255'],
+            'password'          => ['required', Password::min(8)->mixedCase()->numbers()],
         ];
     }
 

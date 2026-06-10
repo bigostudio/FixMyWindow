@@ -4,6 +4,7 @@ use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
 use App\Http\Controllers\Customer\EnquiryController as CustomerEnquiryController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,11 @@ Route::prefix('v1')->group(function () {
             // User management
             Route::middleware('role:super_admin,ops_admin')->group(function () {
                 Route::post('users', [AdminUserController::class, 'store']);
+            });
+
+            // Bookings — accessible by admin, ops admin, and project manager (supervisor)
+            Route::middleware('role:super_admin,ops_admin,project_manager')->group(function () {
+                Route::get('enquiries', [AdminEnquiryController::class, 'index']);
             });
         });
     });

@@ -14,4 +14,6 @@ interface EnquiryRepositoryInterface
     public function findByCustomer(int $customerId): \Illuminate\Database\Eloquent\Collection;
 
     public function paginateByCustomer(int $customerId, int $perPage, string $sort, string $order): LengthAwarePaginator;
+
+    public function paginateAll(int $perPage, string $sort, string $order): LengthAwarePaginator;
 }

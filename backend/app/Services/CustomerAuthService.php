@@ -62,11 +62,12 @@ class CustomerAuthService
         }
 
         $customer = $this->customerRepository->createB2B([
-            'name'     => $data['name'],
-            'phone'    => $data['phone'],
-            'email'    => $data['email'],
-            'password' => $data['password'],
-            'type'     => CustomerType::B2B,
+            'name'              => $data['name'],
+            'organisation_name' => $data['organisation_name'],
+            'phone'             => $data['phone'],
+            'email'             => $data['email'],
+            'password'          => $data['password'],
+            'type'              => CustomerType::B2B,
         ]);
 
         return array_merge($this->issueTokens($customer, 'api'), ['customer' => $customer]);

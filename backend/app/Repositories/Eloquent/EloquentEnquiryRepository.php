@@ -34,4 +34,11 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
                       ->orderBy($sort, $order)
                       ->paginate($perPage);
     }
+
+    public function paginateAll(int $perPage, string $sort, string $order): LengthAwarePaginator
+    {
+        return Enquiry::with(['customer', 'service'])
+                      ->orderBy($sort, $order)
+                      ->paginate($perPage);
+    }
 }
