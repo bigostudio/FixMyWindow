@@ -6,6 +6,7 @@ use App\Http\Controllers\Customer\EnquiryController as CustomerEnquiryController
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
+use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -61,6 +62,13 @@ Route::prefix('v1')->group(function () {
             // Bookings — accessible by admin, operations manager, and supervisor
             Route::middleware('role:ops_admin,ops_manager,supervisor')->group(function () {
                 Route::get('enquiries', [AdminEnquiryController::class, 'index']);
+            });
+
+            // Project team assignment — ops_admin and ops_manager only
+            Route::middleware('role:ops_admin,ops_manager')->group(function () {
+                Route::get('projects/{id}/team',                   [AdminProjectController::class, 'team']);
+                Route::post('projects/{id}/technicians',           [AdminProjectController::class, 'assignStaff']);
+                Route::delete('projects/{id}/technicians/{tid}',   [AdminProjectController::class, 'removeStaff']);
             });
         });
     });
