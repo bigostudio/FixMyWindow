@@ -11,5 +11,6 @@ enum Role: string
     case Installer         = 'installer';
     case QcEngineer        = 'qc_engineer';
     case Accounts          = 'accounts';
-    case BuilderFabricator = 'builder_fabricator';
+    case BuilderFabricator = 'builder_fabricator';  // Cycle 2
+    case Customer          = 'customer';             // separate customers table
 }

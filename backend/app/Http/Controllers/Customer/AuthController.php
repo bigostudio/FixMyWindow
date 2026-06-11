@@ -7,16 +7,21 @@ use App\Http\Requests\AdminRefreshRequest;
 use App\Http\Requests\B2BLoginRequest;
 use App\Http\Requests\B2BRegisterRequest;
 use App\Http\Requests\RegisterCustomerRequest;
+use App\Http\Requests\ResendVerificationRequest;
 use App\Http\Requests\SendOtpRequest;
 use App\Http\Requests\VerifyOtpRequest;
 use App\Http\Resources\CustomerResource;
 use App\Services\CustomerAuthService;
+use App\Services\EmailVerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly CustomerAuthService $authService) {}
+    public function __construct(
+        private readonly CustomerAuthService $authService,
+        private readonly EmailVerificationService $emailVerificationService,
+    ) {}
 
     public function sendOtp(SendOtpRequest $request): JsonResponse
     {
@@ -73,11 +78,8 @@ class AuthController extends Controller
         $result = $this->authService->registerB2B($request->validated());
 
         return response()->json([
-            'customer'      => new CustomerResource($result['customer']),
-            'access_token'  => $result['access_token'],
-            'refresh_token' => $result['refresh_token'],
-            'token_type'    => $result['token_type'],
-            'expires_in'    => $result['expires_in'],
+            'customer' => new CustomerResource($result['customer']),
+            'message'  => 'Account created. Please verify your email address to log in.',
         ], 201);
     }
 
@@ -95,5 +97,19 @@ class AuthController extends Controller
             'token_type'    => $result['token_type'],
             'expires_in'    => $result['expires_in'],
         ]);
+    }
+
+    public function verifyEmail(string $token): JsonResponse
+    {
+        $this->emailVerificationService->verify($token);
+
+        return response()->json(['message' => 'Email verified successfully. You can now log in.']);
+    }
+
+    public function resendVerification(ResendVerificationRequest $request): JsonResponse
+    {
+        $this->emailVerificationService->resendForCustomer($request->validated('email'));
+
+        return response()->json(['message' => 'If that email is registered, a verification link has been sent.']);
     }
 }

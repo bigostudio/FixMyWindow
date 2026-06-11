@@ -19,6 +19,7 @@ class Customer extends Authenticatable implements JWTSubject
         'gst_number',
         'organisation_name',
         'password',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -28,8 +29,9 @@ class Customer extends Authenticatable implements JWTSubject
     protected function casts(): array
     {
         return [
-            'type'     => CustomerType::class,
-            'password' => 'hashed',
+            'type'              => CustomerType::class,
+            'password'          => 'hashed',
+            'email_verified_at' => 'datetime',
         ];
     }
 

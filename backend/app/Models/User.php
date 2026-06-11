@@ -20,6 +20,7 @@ class User extends Authenticatable implements JWTSubject
         'role',
         'is_active',
         'two_factor_secret',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -30,9 +31,10 @@ class User extends Authenticatable implements JWTSubject
     protected function casts(): array
     {
         return [
-            'password'  => 'hashed',
-            'role'      => Role::class,
-            'is_active' => 'boolean',
+            'password'          => 'hashed',
+            'role'              => Role::class,
+            'is_active'         => 'boolean',
+            'email_verified_at' => 'datetime',
         ];
     }
 

@@ -19,6 +19,7 @@ class CustomerAuthService
         private readonly OtpService $otpService,
         private readonly CustomerRepositoryInterface $customerRepository,
         private readonly RefreshTokenRepositoryInterface $refreshTokenRepository,
+        private readonly EmailVerificationService $emailVerificationService,
     ) {}
 
     public function sendOtp(string $phone): void
@@ -87,7 +88,9 @@ class CustomerAuthService
             'type'              => CustomerType::B2B,
         ]);
 
-        return array_merge($this->issueTokens($customer, 'api'), ['customer' => $customer]);
+        $this->emailVerificationService->send($customer, Customer::class);
+
+        return ['customer' => $customer];
     }
 
     public function loginB2B(string $email, string $password): array
@@ -96,6 +99,10 @@ class CustomerAuthService
 
         if (! $customer || ! Hash::check($password, $customer->password)) {
             throw new BusinessRuleException('Invalid credentials.');
+        }
+
+        if (! $customer->email_verified_at) {
+            throw new BusinessRuleException('Please verify your email address before logging in. Check your inbox for the verification link.');
         }
 
         return array_merge($this->issueTokens($customer, 'api'), ['customer' => $customer]);

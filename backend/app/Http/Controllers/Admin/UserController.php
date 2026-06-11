@@ -20,4 +20,21 @@ class UserController extends Controller
 
         return response()->json(new UserResource($user), 201);
     }
+
+    public function approve(int $id): JsonResponse
+    {
+        $user = $this->userService->approve($id);
+
+        return response()->json([
+            'user'    => new UserResource($user),
+            'message' => 'User approved successfully.',
+        ]);
+    }
+
+    public function reject(int $id): JsonResponse
+    {
+        $this->userService->reject($id);
+
+        return response()->json(['message' => 'User rejected and removed.']);
+    }
 }

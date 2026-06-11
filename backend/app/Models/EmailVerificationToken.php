@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class EmailVerificationToken extends Model
+{
+    public $timestamps = false;
+
+    protected $fillable = [
+        'model_type',
+        'model_id',
+        'email',
+        'token',
+        'expires_at',
+        'created_at',
+    ];
+
+    protected $casts = [
+        'expires_at' => 'datetime',
+        'created_at' => 'datetime',
+    ];
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at->isPast();
+    }
+}
