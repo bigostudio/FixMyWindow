@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
+use App\Http\Controllers\Customer\ContactController as CustomerContactController;
 use App\Http\Controllers\Customer\EnquiryController as CustomerEnquiryController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
 
     // ─── Customer Auth ────────────────────────────────────────────────
+    Route::post('contact',             [CustomerContactController::class, 'store']);
+
     Route::post('auth/send-otp',      [CustomerAuthController::class, 'sendOtp']);
     Route::post('auth/register',      [CustomerAuthController::class, 'register']);
     Route::post('auth/verify-otp',    [CustomerAuthController::class, 'verifyOtp']);
