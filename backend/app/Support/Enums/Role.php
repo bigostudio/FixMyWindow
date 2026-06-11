@@ -4,13 +4,9 @@ namespace App\Support\Enums;
 
 enum Role: string
 {
-    case SuperAdmin        = 'super_admin';
-    case OpsAdmin          = 'ops_admin';
-    case ProjectManager    = 'project_manager';
-    case Surveyor          = 'surveyor';
-    case Installer         = 'installer';
-    case QcEngineer        = 'qc_engineer';
-    case Accounts          = 'accounts';
-    case BuilderFabricator = 'builder_fabricator';  // Cycle 2
-    case Customer          = 'customer';             // separate customers table
+    case Admin              = 'ops_admin';
+    case OperationsManager  = 'ops_manager';
+    case Supervisor         = 'supervisor';
+    case Technician         = 'technician';
+    case Customer           = 'customer';   // separate customers table
 }

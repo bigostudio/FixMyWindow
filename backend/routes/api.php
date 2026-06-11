@@ -50,14 +50,16 @@ Route::prefix('v1')->group(function () {
             Route::post('auth/email/resend',    [AdminAuthController::class, 'resendVerification']);
 
             // User management
-            Route::middleware('role:super_admin,ops_admin')->group(function () {
+            Route::middleware('role:ops_admin')->group(function () {
+                Route::get('users/staff',          [AdminUserController::class, 'staff']);
+                Route::get('users/pending',        [AdminUserController::class, 'pending']);
                 Route::post('users',               [AdminUserController::class, 'store']);
                 Route::put('users/{id}/approve',   [AdminUserController::class, 'approve']);
                 Route::put('users/{id}/reject',    [AdminUserController::class, 'reject']);
             });
 
-            // Bookings — accessible by admin, ops admin, and project manager (supervisor)
-            Route::middleware('role:super_admin,ops_admin,project_manager')->group(function () {
+            // Bookings — accessible by admin, operations manager, and supervisor
+            Route::middleware('role:ops_admin,ops_manager,supervisor')->group(function () {
                 Route::get('enquiries', [AdminEnquiryController::class, 'index']);
             });
         });

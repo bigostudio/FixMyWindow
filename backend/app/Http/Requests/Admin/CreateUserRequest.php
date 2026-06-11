@@ -20,8 +20,7 @@ class CreateUserRequest extends FormRequest
             fn (Role $r) => $r->value,
             array_filter(
                 Role::cases(),
-                // Customers are not staff — cannot be created via this endpoint
-                fn (Role $r) => $r !== Role::BuilderFabricator
+                fn (Role $r) => $r !== Role::Customer
             )
         );
 

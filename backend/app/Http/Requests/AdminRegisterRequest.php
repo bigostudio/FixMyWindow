@@ -21,7 +21,7 @@ class AdminRegisterRequest extends FormRequest
             'email'    => ['required', 'email', 'max:255'],
             'phone'    => ['required', 'string', 'max:15'],
             'password' => ['required', Password::min(8)->letters()->numbers()],
-            'role'     => ['required', new Enum(Role::class), 'not_in:' . Role::SuperAdmin->value . ',' . Role::Customer->value . ',' . Role::BuilderFabricator->value],
+            'role'     => ['required', new Enum(Role::class), 'not_in:' . Role::Admin->value . ',' . Role::Customer->value],
         ];
     }
 }

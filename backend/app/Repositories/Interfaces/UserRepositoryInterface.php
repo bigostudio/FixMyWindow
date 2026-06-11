@@ -3,6 +3,7 @@
 namespace App\Repositories\Interfaces;
 
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 interface UserRepositoryInterface
@@ -16,6 +17,8 @@ interface UserRepositoryInterface
     public function create(array $data): User;
 
     public function getByRoles(array $roles): Collection;
+
+    public function getPending(int $page, int $limit): LengthAwarePaginator;
 
     public function delete(User $user): void;
 }

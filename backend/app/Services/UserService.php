@@ -8,6 +8,9 @@ use App\Mail\AdminApprovedMail;
 use App\Mail\AdminRejectedMail;
 use App\Models\User;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use App\Support\Enums\Role;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 
 class UserService
@@ -15,6 +18,20 @@ class UserService
     public function __construct(
         private readonly UserRepositoryInterface $userRepository,
     ) {}
+
+    public function getPending(int $page, int $limit): LengthAwarePaginator
+    {
+        return $this->userRepository->getPending($page, $limit);
+    }
+
+    public function getActiveStaff(): Collection
+    {
+        return $this->userRepository->getByRoles([
+            Role::Admin->value,
+            Role::Supervisor->value,
+            Role::Technician->value,
+        ]);
+    }
 
     public function create(array $data): User
     {

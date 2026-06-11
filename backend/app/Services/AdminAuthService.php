@@ -39,8 +39,7 @@ class AdminAuthService
         ]);
 
         $approvers = $this->userRepository->getByRoles([
-            Role::SuperAdmin->value,
-            Role::OpsAdmin->value,
+            Role::Admin->value,
         ]);
 
         foreach ($approvers as $approver) {

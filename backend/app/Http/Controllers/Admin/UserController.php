@@ -4,15 +4,44 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CreateUserRequest;
+use App\Http\Resources\StaffResource;
 use App\Http\Resources\UserResource;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     public function __construct(
         private readonly UserService $userService,
     ) {}
+
+    public function staff(): JsonResponse
+    {
+        $staff = $this->userService->getActiveStaff();
+
+        return response()->json([
+            'items' => StaffResource::collection($staff),
+        ]);
+    }
+
+    public function pending(Request $request): JsonResponse
+    {
+        $page  = max(1, (int) $request->query('page', 1));
+        $limit = min(100, max(1, (int) $request->query('limit', 20)));
+
+        $paginated = $this->userService->getPending($page, $limit);
+
+        return response()->json([
+            'items' => UserResource::collection($paginated->items()),
+            'meta'  => [
+                'current_page' => $paginated->currentPage(),
+                'per_page'     => $paginated->perPage(),
+                'total'        => $paginated->total(),
+                'last_page'    => $paginated->lastPage(),
+            ],
+        ]);
+    }
 
     public function store(CreateUserRequest $request): JsonResponse
     {
