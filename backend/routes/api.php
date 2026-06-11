@@ -12,6 +12,7 @@ Route::prefix('v1')->group(function () {
 
     // ─── Customer Auth ────────────────────────────────────────────────
     Route::post('auth/send-otp',      [CustomerAuthController::class, 'sendOtp']);
+    Route::post('auth/register',      [CustomerAuthController::class, 'register']);
     Route::post('auth/verify-otp',    [CustomerAuthController::class, 'verifyOtp']);
     Route::post('auth/refresh-token', [CustomerAuthController::class, 'refresh']);
     Route::post('auth/b2b/register',  [CustomerAuthController::class, 'registerB2B']);

@@ -10,6 +10,8 @@ interface CustomerRepositoryInterface
 
     public function upsertByPhone(string $phone): Customer;
 
+    public function createByPhone(string $phone, string $name): Customer;
+
     public function update(Customer $customer, array $data): Customer;
 
     public function findByEmail(string $email): ?Customer;

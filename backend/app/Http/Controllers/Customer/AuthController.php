@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminRefreshRequest;
 use App\Http\Requests\B2BLoginRequest;
 use App\Http\Requests\B2BRegisterRequest;
+use App\Http\Requests\RegisterCustomerRequest;
 use App\Http\Requests\SendOtpRequest;
 use App\Http\Requests\VerifyOtpRequest;
 use App\Http\Resources\CustomerResource;
@@ -22,6 +23,19 @@ class AuthController extends Controller
         $this->authService->sendOtp($request->validated('phone'));
 
         return response()->json(['message' => 'OTP sent successfully.']);
+    }
+
+    public function register(RegisterCustomerRequest $request): JsonResponse
+    {
+        $result = $this->authService->register(
+            $request->validated('phone'),
+            $request->validated('name'),
+        );
+
+        return response()->json([
+            'customer' => new CustomerResource($result['customer']),
+            'message'  => 'Account created. Please verify your phone number to login.',
+        ], 201);
     }
 
     public function verifyOtp(VerifyOtpRequest $request): JsonResponse

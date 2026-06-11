@@ -23,18 +23,35 @@ class CustomerAuthService
 
     public function sendOtp(string $phone): void
     {
+        if (! $this->customerRepository->findByPhone($phone)) {
+            throw new BusinessRuleException('Phone number not registered. Please register first.');
+        }
+
         $this->otpService->send($phone);
+    }
+
+    public function register(string $phone, string $name): array
+    {
+        if ($this->customerRepository->findByPhone($phone)) {
+            throw new ConflictException('An account with this phone number already exists.');
+        }
+
+        $customer = $this->customerRepository->createByPhone($phone, $name);
+
+        return ['customer' => $customer];
     }
 
     public function verifyOtp(string $phone, string $otp): array
     {
+        $customer = $this->customerRepository->findByPhone($phone);
+
+        if (! $customer) {
+            throw new BusinessRuleException('Phone number not registered. Please register first.');
+        }
+
         $this->otpService->verify($phone, $otp);
 
-        $customer = $this->customerRepository->upsertByPhone($phone);
-
-        $tokens = $this->issueTokens($customer, 'api');
-
-        return array_merge($tokens, ['customer' => $customer]);
+        return array_merge($this->issueTokens($customer, 'api'), ['customer' => $customer]);
     }
 
     public function refresh(string $rawToken): array

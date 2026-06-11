@@ -4,6 +4,7 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\Customer;
 use App\Repositories\Interfaces\CustomerRepositoryInterface;
+use App\Support\Enums\CustomerType;
 
 class EloquentCustomerRepository implements CustomerRepositoryInterface
 {
@@ -26,6 +27,11 @@ class EloquentCustomerRepository implements CustomerRepositoryInterface
     public function findByEmail(string $email): ?Customer
     {
         return Customer::where('email', $email)->first();
+    }
+
+    public function createByPhone(string $phone, string $name): Customer
+    {
+        return Customer::create(['phone' => $phone, 'name' => $name, 'type' => CustomerType::B2C]);
     }
 
     public function createB2B(array $data): Customer
