@@ -7,6 +7,7 @@ use App\Repositories\Eloquent\EloquentEmailVerificationTokenRepository;
 use App\Repositories\Eloquent\EloquentEnquiryRepository;
 use App\Repositories\Eloquent\EloquentOtpRepository;
 use App\Repositories\Eloquent\EloquentProjectAssignmentRepository;
+use App\Repositories\Eloquent\EloquentSurveyRepository;
 use App\Repositories\Eloquent\EloquentProjectTimelineRepository;
 use App\Repositories\Eloquent\EloquentRefreshTokenRepository;
 use App\Repositories\Eloquent\EloquentServiceRepository;
@@ -16,6 +17,7 @@ use App\Repositories\Interfaces\EmailVerificationTokenRepositoryInterface;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
 use App\Repositories\Interfaces\OtpRepositoryInterface;
 use App\Repositories\Interfaces\ProjectAssignmentRepositoryInterface;
+use App\Repositories\Interfaces\SurveyRepositoryInterface;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
 use App\Repositories\Interfaces\RefreshTokenRepositoryInterface;
 use App\Repositories\Interfaces\ServiceRepositoryInterface;
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ServiceRepositoryInterface::class, EloquentServiceRepository::class);
         $this->app->bind(EnquiryRepositoryInterface::class, EloquentEnquiryRepository::class);
         $this->app->bind(ProjectAssignmentRepositoryInterface::class, EloquentProjectAssignmentRepository::class);
+        $this->app->bind(SurveyRepositoryInterface::class, EloquentSurveyRepository::class);
         $this->app->bind(ProjectTimelineRepositoryInterface::class, EloquentProjectTimelineRepository::class);
     }
 

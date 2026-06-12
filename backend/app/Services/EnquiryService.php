@@ -7,6 +7,7 @@ use App\Models\Enquiry;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
+use App\Models\User;
 use App\Repositories\Interfaces\ServiceRepositoryInterface;
 use App\Support\Enums\CustomerType;
 use App\Support\Enums\EnquiryStatus;
@@ -51,6 +52,57 @@ class EnquiryService
         }
 
         return $enquiry;
+    }
+
+    public function getById(int $enquiryId): Enquiry
+    {
+        $enquiry = $this->enquiryRepository->findById($enquiryId);
+
+        if (! $enquiry) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        }
+
+        return $enquiry;
+    }
+
+    public function updateStatus(int $enquiryId, User $actor, array $data): Enquiry
+    {
+        $enquiry = $this->enquiryRepository->findById($enquiryId);
+
+        if (! $enquiry) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        }
+
+        $statusEnum    = EnquiryStatus::from($data['status']);
+        $timelineStatus = $this->timelineStatusFor($statusEnum);
+
+        return DB::transaction(function () use ($enquiry, $statusEnum, $timelineStatus, $actor) {
+            $enquiry = $this->enquiryRepository->update($enquiry, ['status' => $statusEnum->value]);
+
+            $this->timelineRepository->log([
+                'enquiry_id'  => $enquiry->id,
+                'project_id'  => null,
+                'status'      => $timelineStatus->value,
+                'description' => 'Enquiry status updated to ' . $statusEnum->value . '.',
+                'actor_type'  => $actor->role->value,
+                'actor_id'    => $actor->id,
+                'actor_name'  => $actor->name,
+                'created_at'  => now(),
+            ]);
+
+            return $enquiry;
+        });
+    }
+
+    private function timelineStatusFor(EnquiryStatus $status): TimelineStatus
+    {
+        return match ($status) {
+            EnquiryStatus::Assigned   => TimelineStatus::SurveyorAssigned,
+            EnquiryStatus::InProgress => TimelineStatus::WorkInProgress,
+            EnquiryStatus::Completed  => TimelineStatus::Completed,
+            EnquiryStatus::Cancelled  => TimelineStatus::Cancelled,
+            default                   => TimelineStatus::New,
+        };
     }
 
     public function book(int $customerId, string $actorName, array $data): Enquiry

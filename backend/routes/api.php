@@ -7,6 +7,7 @@ use App\Http\Controllers\Customer\ProfileController as CustomerProfileController
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
+use App\Http\Controllers\Admin\SurveyController as AdminSurveyController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,9 +60,20 @@ Route::prefix('v1')->group(function () {
                 Route::put('users/{id}/reject',    [AdminUserController::class, 'reject']);
             });
 
-            // Bookings — accessible by admin, operations manager, and supervisor
-            Route::middleware('role:ops_admin,ops_manager,supervisor')->group(function () {
-                Route::get('enquiries', [AdminEnquiryController::class, 'index']);
+            // Bookings — accessible by all internal roles
+            Route::middleware('role:ops_admin,ops_manager,supervisor,technician')->group(function () {
+                Route::get('enquiries',             [AdminEnquiryController::class, 'index']);
+                Route::get('enquiries/{id}',        [AdminEnquiryController::class, 'show']);
+                Route::put('enquiries/{id}/status', [AdminEnquiryController::class, 'updateStatus']);
+            });
+
+            // Surveys — ops_admin and ops_manager only
+            Route::middleware('role:ops_admin,ops_manager')->group(function () {
+                Route::post('surveys',                    [AdminSurveyController::class, 'store']);
+                Route::get('surveys',                     [AdminSurveyController::class, 'index']);
+                Route::get('surveys/{id}',                [AdminSurveyController::class, 'show']);
+                Route::put('surveys/{id}/checklist',      [AdminSurveyController::class, 'updateChecklist']);
+                Route::put('surveys/{id}/gonogo',         [AdminSurveyController::class, 'submitGoNoGo']);
             });
 
             // Project team assignment — ops_admin and ops_manager only

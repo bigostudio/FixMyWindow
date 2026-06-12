@@ -41,4 +41,10 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
                       ->orderBy($sort, $order)
                       ->paginate($perPage);
     }
+
+    public function update(Enquiry $enquiry, array $data): Enquiry
+    {
+        $enquiry->update($data);
+        return $enquiry->fresh();
+    }
 }

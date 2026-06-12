@@ -16,4 +16,6 @@ interface EnquiryRepositoryInterface
     public function paginateByCustomer(int $customerId, int $perPage, string $sort, string $order): LengthAwarePaginator;
 
     public function paginateAll(int $perPage, string $sort, string $order): LengthAwarePaginator;
+
+    public function update(Enquiry $enquiry, array $data): Enquiry;
 }
