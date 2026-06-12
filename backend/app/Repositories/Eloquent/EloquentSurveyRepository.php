@@ -30,6 +30,11 @@ class EloquentSurveyRepository implements SurveyRepositoryInterface
         return $survey->refresh();
     }
 
+    public function findByEnquiryId(int $enquiryId): ?Survey
+    {
+        return Survey::where('enquiry_id', $enquiryId)->first();
+    }
+
     public function paginate(int $page, int $limit, ?int $enquiryId = null): LengthAwarePaginator
     {
         return Survey::with(['enquiry', 'surveyor'])

@@ -10,6 +10,7 @@ use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
 use App\Repositories\Interfaces\SurveyRepositoryInterface;
 use App\Support\Enums\ProjectStatus;
 use App\Support\Enums\SurveyOutcome;
+use App\Support\Enums\TimelineActorType;
 use App\Support\Enums\TimelineStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -30,10 +31,45 @@ class SurveyService
             throw new NotFoundHttpException('Enquiry not found.');
         }
 
+        if ($this->surveyRepo->findByEnquiryId($data['enquiry_id'])) {
+            throw new BusinessRuleException('A survey has already been initiated for this enquiry.');
+        }
+
         return $this->surveyRepo->create([
             'enquiry_id'  => $data['enquiry_id'],
             'surveyor_id' => $data['surveyor_id'] ?? null,
         ]);
+    }
+
+    public function initiate(int $projectId, ?int $surveyorId, User $actor): \App\Models\Survey
+    {
+        $project = Project::with('enquiry')->find($projectId);
+        if (! $project) {
+            throw new NotFoundHttpException('Project not found.');
+        }
+
+        if ($this->surveyRepo->findByEnquiryId($project->enquiry_id)) {
+            throw new BusinessRuleException('A survey has already been initiated for this project.');
+        }
+
+        return DB::transaction(function () use ($project, $surveyorId, $actor) {
+            $survey = $this->surveyRepo->create([
+                'enquiry_id'  => $project->enquiry_id,
+                'surveyor_id' => $surveyorId,
+            ]);
+
+            $this->timelineRepo->log([
+                'enquiry_id'  => $project->enquiry_id,
+                'project_id'  => $project->id,
+                'status'      => TimelineStatus::InspectionScheduled->value,
+                'description' => 'Survey initiated for expert inspection.',
+                'actor_type'  => $actor->role->value,
+                'actor_id'    => $actor->id,
+                'actor_name'  => $actor->name,
+            ]);
+
+            return $survey->load(['enquiry', 'surveyor']);
+        });
     }
 
     public function updateChecklist(int $surveyId, array $data): \App\Models\Survey
@@ -66,14 +102,12 @@ class SurveyService
         DB::transaction(function () use ($survey, $outcomeEnum, $actor) {
             $survey->update(['outcome' => $outcomeEnum]);
 
-            if ($outcomeEnum === SurveyOutcome::Go) {
-                $project = Project::create([
-                    'enquiry_id' => $survey->enquiry_id,
-                    'status'     => ProjectStatus::OnTrack,
-                ]);
+            // Project already exists — created at booking time
+            $project = Project::where('enquiry_id', $survey->enquiry_id)->first();
 
+            if ($outcomeEnum === SurveyOutcome::Go) {
                 $this->timelineRepo->log([
-                    'project_id'  => $project->id,
+                    'project_id'  => $project?->id,
                     'enquiry_id'  => $survey->enquiry_id,
                     'status'      => TimelineStatus::SurveyPassed->value,
                     'description' => 'Survey completed and approved. Project is ready to proceed.',
@@ -83,27 +117,31 @@ class SurveyService
                 ]);
 
                 $this->timelineRepo->log([
-                    'project_id'  => $project->id,
+                    'project_id'  => $project?->id,
                     'enquiry_id'  => $survey->enquiry_id,
                     'status'      => TimelineStatus::WorkOrderCreated->value,
                     'description' => 'Work order created automatically on survey approval.',
-                    'actor_type'  => 'system',
+                    'actor_type'  => TimelineActorType::System->value,
                     'actor_id'    => null,
                     'actor_name'  => 'System',
                 ]);
 
             } elseif ($outcomeEnum === SurveyOutcome::NoGo) {
+                if ($project) {
+                    $project->update(['status' => ProjectStatus::Cancelled]);
+                }
+
                 $this->timelineRepo->log([
-                    'project_id'  => null,
+                    'project_id'  => $project?->id,
                     'enquiry_id'  => $survey->enquiry_id,
                     'status'      => TimelineStatus::SurveyRejected->value,
-                    'description' => 'Survey failed. Project declined at Go/No-Go stage.',
+                    'description' => 'Survey failed. Project cancelled at Go/No-Go stage.',
                     'actor_type'  => $actor->role->value,
                     'actor_id'    => $actor->id,
                     'actor_name'  => $actor->name,
                 ]);
             }
-            // HOLD: save decision only, no project, no timeline entry
+            // HOLD: save decision only, no status change
         });
 
         return $survey->refresh();

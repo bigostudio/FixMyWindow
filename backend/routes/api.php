@@ -76,8 +76,15 @@ Route::prefix('v1')->group(function () {
                 Route::put('surveys/{id}/gonogo',         [AdminSurveyController::class, 'submitGoNoGo']);
             });
 
-            // Project team assignment — ops_admin and ops_manager only
+            // Projects — all internal roles can view
+            Route::middleware('role:ops_admin,ops_manager,supervisor,technician')->group(function () {
+                Route::get('projects',                             [AdminProjectController::class, 'index']);
+                Route::get('projects/{id}',                        [AdminProjectController::class, 'show']);
+            });
+
+            // Project team assignment + survey initiation — ops_admin and ops_manager only
             Route::middleware('role:ops_admin,ops_manager')->group(function () {
+                Route::post('projects/{id}/initiate-survey',       [AdminProjectController::class, 'initiateSurvey']);
                 Route::get('projects/{id}/team',                   [AdminProjectController::class, 'team']);
                 Route::post('projects/{id}/technicians',           [AdminProjectController::class, 'assignStaff']);
                 Route::delete('projects/{id}/technicians/{tid}',   [AdminProjectController::class, 'removeStaff']);

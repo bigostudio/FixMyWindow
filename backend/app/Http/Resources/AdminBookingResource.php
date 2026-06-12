@@ -10,6 +10,7 @@ class AdminBookingResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id'                  => $this->id,
             'booking_id'          => $this->enquiry_number,
             'customer_name'       => $this->customer?->name,
             'service_type'        => $this->service?->name,

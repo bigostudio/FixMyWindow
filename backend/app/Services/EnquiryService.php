@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\BusinessRuleException;
 use App\Models\Enquiry;
+use App\Models\Project;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
@@ -13,6 +14,7 @@ use App\Support\Enums\CustomerType;
 use App\Support\Enums\EnquiryStatus;
 use App\Support\Enums\InspectionType;
 use App\Support\Enums\PaymentStatus;
+use App\Support\Enums\ProjectStatus;
 use App\Support\Enums\TimelineActorType;
 use App\Support\Enums\TimelineStatus;
 use Illuminate\Support\Facades\DB;
@@ -120,7 +122,6 @@ class EnquiryService
 
         return DB::transaction(function () use ($customerId, $actorName, $data, $service) {
             // Step 1 — Lock the counter row, then increment; never use MAX() or COUNT()
-            // lockForUpdate() is a SELECT-level hint — SELECT first, then UPDATE separately
             $row = DB::table('enquiry_counter')
                 ->where('id', 1)
                 ->lockForUpdate()
@@ -133,7 +134,7 @@ class EnquiryService
                 ->update(['last_value' => $counter, 'updated_at' => now()]);
             $enquiryNumber = sprintf('FMW-%s-%04d', now('UTC')->format('Ymd'), $counter);
 
-            // Step 2 — Create enquiry; material_type is denormalised from the service
+            // Step 2 — Create enquiry; inspection fee is paid immediately in Cycle 1
             $enquiry = $this->enquiryRepository->create([
                 'enquiry_number'  => $enquiryNumber,
                 'customer_id'     => $customerId,
@@ -148,7 +149,7 @@ class EnquiryService
                 'longitude'       => $data['location']['longitude'],
                 'address'         => $data['location']['address'],
                 'inspection_fee'  => 1000,
-                'payment_status'  => PaymentStatus::Pending->value,
+                'payment_status'  => PaymentStatus::Paid->value,
                 'billing_name'    => $data['billing']['name'],
                 'billing_poc'     => $data['billing']['point_of_contact'] ?? null,
                 'billing_gst'     => $data['billing']['gst_number'] ?? null,
@@ -158,15 +159,32 @@ class EnquiryService
                 'booking_date'    => today(),
             ]);
 
-            // Step 3 — Mandatory timeline entry in the same transaction
+            // Step 3 — Create project immediately; survey and Go/No-Go happen later
+            $project = Project::create([
+                'enquiry_id' => $enquiry->id,
+                'status'     => ProjectStatus::OnTrack,
+            ]);
+
+            // Step 4 — Timeline: booking created + payment received (same transaction)
             $this->timelineRepository->log([
                 'enquiry_id'  => $enquiry->id,
-                'project_id'  => null,
+                'project_id'  => $project->id,
                 'status'      => TimelineStatus::New->value,
-                'description' => 'Booking created by customer.',
+                'description' => 'Booking created by customer. Expert inspection fee of Rs. 1000 paid.',
                 'actor_type'  => TimelineActorType::Customer->value,
                 'actor_id'    => $customerId,
                 'actor_name'  => $actorName,
+                'created_at'  => now(),
+            ]);
+
+            $this->timelineRepository->log([
+                'enquiry_id'  => $enquiry->id,
+                'project_id'  => $project->id,
+                'status'      => TimelineStatus::PaymentReceived->value,
+                'description' => 'Inspection fee of Rs. 1000 received.',
+                'actor_type'  => TimelineActorType::System->value,
+                'actor_id'    => null,
+                'actor_name'  => 'System',
                 'created_at'  => now(),
             ]);
 

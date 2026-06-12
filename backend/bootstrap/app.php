@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(ForceJson::class);
+        $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->append(ResponseEnvelope::class);
         $middleware->alias(['role' => RoleGuard::class]);
     })

@@ -15,5 +15,7 @@ interface SurveyRepositoryInterface
 
     public function updateOutcome(Survey $survey, string $outcome): Survey;
 
+    public function findByEnquiryId(int $enquiryId): ?Survey;
+
     public function paginate(int $page, int $limit, ?int $enquiryId = null): LengthAwarePaginator;
 }
