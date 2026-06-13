@@ -6,6 +6,7 @@ use App\Models\Enquiry;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class EloquentEnquiryRepository implements EnquiryRepositoryInterface
 {
@@ -17,6 +18,16 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
     public function findById(int $id): ?Enquiry
     {
         return Enquiry::with(['service.category', 'customer'])->find($id);
+    }
+
+    public function findByIdWithRelations(int $id): ?Enquiry
+    {
+        return Enquiry::with([
+            'service.category',
+            'customer',
+            'assignments.user',
+            'timeline',
+        ])->find($id);
     }
 
     public function findByCustomer(int $customerId): Collection
@@ -37,7 +48,7 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
 
     public function paginateAll(int $perPage, string $sort, string $order): LengthAwarePaginator
     {
-        return Enquiry::with(['customer', 'service'])
+        return Enquiry::with(['customer', 'service', 'assignments.user'])
                       ->orderBy($sort, $order)
                       ->paginate($perPage);
     }
@@ -46,5 +57,19 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
     {
         $enquiry->update($data);
         return $enquiry->fresh();
+    }
+
+    public function getDistinctAddressesByCustomer(int $customerId): \Illuminate\Support\Collection
+    {
+        return Enquiry::where('customer_id', $customerId)
+            ->select(
+                'address',
+                DB::raw('MIN(city) as city'),
+                DB::raw('MIN(latitude) as latitude'),
+                DB::raw('MIN(longitude) as longitude'),
+            )
+            ->groupBy('address')
+            ->orderByRaw('MAX(created_at) DESC')
+            ->get();
     }
 }

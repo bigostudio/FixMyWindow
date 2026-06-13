@@ -10,11 +10,9 @@ class ProjectTimeline extends Model
 {
     protected $table = 'project_timeline';
 
-    // Append-only — no updated_at
     const UPDATED_AT = null;
 
     protected $fillable = [
-        'project_id',
         'enquiry_id',
         'status',
         'description',

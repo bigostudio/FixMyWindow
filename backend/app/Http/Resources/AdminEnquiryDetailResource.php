@@ -13,6 +13,7 @@ class AdminEnquiryDetailResource extends JsonResource
             'id'             => $this->id,
             'booking_id'     => $this->enquiry_number,
             'status'         => $this->status->value,
+            'status_label'   => $this->status->label(),
             'type'           => $this->type->value,
 
             'customer'       => [
@@ -54,6 +55,27 @@ class AdminEnquiryDetailResource extends JsonResource
                 'address'          => $this->billing_address,
             ],
 
+            'progress'       => [
+                'total_units'      => $this->total_units,
+                'units_completed'  => $this->units_completed,
+                'progress_percent' => $this->progress_percent,
+                'delay_reason'     => $this->delay_reason,
+            ],
+
+            'team'           => $this->whenLoaded('assignments',
+                fn() => ProjectAssignmentResource::collection($this->assignments)
+            ),
+
+            'timeline'       => $this->whenLoaded('timeline',
+                fn() => $this->timeline->map(fn($entry) => [
+                    'status'      => $entry->status,
+                    'description' => $entry->description,
+                    'actor_name'  => $entry->actor_name,
+                    'created_at'  => $entry->created_at?->toIso8601String(),
+                ])
+            ),
+
+            'final_completion_date' => $this->final_completion_date?->toDateString(),
             'blueprint_id'   => $this->blueprint_id,
             'booking_date'   => $this->booking_date?->toDateString(),
             'created_at'     => $this->created_at?->toISOString(),

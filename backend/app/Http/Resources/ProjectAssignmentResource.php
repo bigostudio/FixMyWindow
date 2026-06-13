@@ -11,7 +11,7 @@ class ProjectAssignmentResource extends JsonResource
     {
         return [
             'id'          => $this->id,
-            'project_id'  => $this->project_id,
+            'enquiry_id'  => $this->enquiry_id,
             'user'        => [
                 'id'    => $this->user->id,
                 'name'  => $this->user->name,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookEnquiryRequest;
+use App\Http\Resources\CustomerAddressResource;
 use App\Http\Resources\EnquiryResource;
 use App\Services\EnquiryService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -45,6 +46,13 @@ class EnquiryController extends Controller
         }
 
         return response()->json((new EnquiryResource($enquiry))->resolve());
+    }
+
+    public function addresses(): JsonResponse
+    {
+        $addresses = $this->enquiryService->getAddressesForCustomer(auth('api')->id());
+
+        return response()->json(CustomerAddressResource::collection($addresses));
     }
 
     public function book(BookEnquiryRequest $request): JsonResponse

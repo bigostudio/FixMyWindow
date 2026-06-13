@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\BusinessRuleException;
-use App\Models\Project;
+use App\Models\Enquiry;
 use App\Models\User;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
@@ -19,8 +19,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class SurveyService
 {
     public function __construct(
-        private readonly SurveyRepositoryInterface $surveyRepo,
-        private readonly EnquiryRepositoryInterface $enquiryRepo,
+        private readonly SurveyRepositoryInterface          $surveyRepo,
+        private readonly EnquiryRepositoryInterface         $enquiryRepo,
         private readonly ProjectTimelineRepositoryInterface $timelineRepo,
     ) {}
 
@@ -41,26 +41,27 @@ class SurveyService
         ]);
     }
 
-    public function initiate(int $projectId, ?int $surveyorId, User $actor): \App\Models\Survey
+    public function initiate(int $enquiryId, ?int $surveyorId, User $actor): \App\Models\Survey
     {
-        $project = Project::with('enquiry')->find($projectId);
-        if (! $project) {
-            throw new NotFoundHttpException('Project not found.');
+        $enquiry = $this->enquiryRepo->findById($enquiryId);
+        if (! $enquiry) {
+            throw new NotFoundHttpException('Enquiry not found.');
         }
 
-        if ($this->surveyRepo->findByEnquiryId($project->enquiry_id)) {
-            throw new BusinessRuleException('A survey has already been initiated for this project.');
+        if ($this->surveyRepo->findByEnquiryId($enquiryId)) {
+            throw new BusinessRuleException('A survey has already been initiated for this enquiry.');
         }
 
-        return DB::transaction(function () use ($project, $surveyorId, $actor) {
+        return DB::transaction(function () use ($enquiry, $surveyorId, $actor) {
             $survey = $this->surveyRepo->create([
-                'enquiry_id'  => $project->enquiry_id,
+                'enquiry_id'  => $enquiry->id,
                 'surveyor_id' => $surveyorId,
             ]);
 
+            $enquiry->update(['status' => ProjectStatus::SurveyInitiated->value]);
+
             $this->timelineRepo->log([
-                'enquiry_id'  => $project->enquiry_id,
-                'project_id'  => $project->id,
+                'enquiry_id'  => $enquiry->id,
                 'status'      => TimelineStatus::InspectionScheduled->value,
                 'description' => 'Survey initiated for expert inspection.',
                 'actor_type'  => $actor->role->value,
@@ -94,7 +95,7 @@ class SurveyService
         }
 
         if ($survey->outcome === SurveyOutcome::Go) {
-            throw new BusinessRuleException('Survey already approved. A project has been created.');
+            throw new BusinessRuleException('Survey already approved.');
         }
 
         $outcomeEnum = SurveyOutcome::from($outcome);
@@ -102,12 +103,12 @@ class SurveyService
         DB::transaction(function () use ($survey, $outcomeEnum, $actor) {
             $survey->update(['outcome' => $outcomeEnum]);
 
-            // Project already exists — created at booking time
-            $project = Project::where('enquiry_id', $survey->enquiry_id)->first();
+            $enquiry = $this->enquiryRepo->findById($survey->enquiry_id);
 
             if ($outcomeEnum === SurveyOutcome::Go) {
+                $enquiry->update(['status' => ProjectStatus::SurveyCompleted->value]);
+
                 $this->timelineRepo->log([
-                    'project_id'  => $project?->id,
                     'enquiry_id'  => $survey->enquiry_id,
                     'status'      => TimelineStatus::SurveyPassed->value,
                     'description' => 'Survey completed and approved. Project is ready to proceed.',
@@ -117,7 +118,6 @@ class SurveyService
                 ]);
 
                 $this->timelineRepo->log([
-                    'project_id'  => $project?->id,
                     'enquiry_id'  => $survey->enquiry_id,
                     'status'      => TimelineStatus::WorkOrderCreated->value,
                     'description' => 'Work order created automatically on survey approval.',
@@ -127,21 +127,18 @@ class SurveyService
                 ]);
 
             } elseif ($outcomeEnum === SurveyOutcome::NoGo) {
-                if ($project) {
-                    $project->update(['status' => ProjectStatus::Cancelled]);
-                }
+                $enquiry->update(['status' => ProjectStatus::Cancelled->value]);
 
                 $this->timelineRepo->log([
-                    'project_id'  => $project?->id,
                     'enquiry_id'  => $survey->enquiry_id,
                     'status'      => TimelineStatus::SurveyRejected->value,
-                    'description' => 'Survey failed. Project cancelled at Go/No-Go stage.',
+                    'description' => 'Survey failed. Enquiry cancelled at Go/No-Go stage.',
                     'actor_type'  => $actor->role->value,
                     'actor_id'    => $actor->id,
                     'actor_name'  => $actor->name,
                 ]);
             }
-            // HOLD: save decision only, no status change
+            // HOLD: save outcome only, no status change
         });
 
         return $survey->refresh();

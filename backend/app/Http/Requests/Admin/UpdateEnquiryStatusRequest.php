@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Support\Enums\EnquiryStatus;
+use App\Support\Enums\ProjectStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,12 +16,9 @@ class UpdateEnquiryStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'string', Rule::in([
-                EnquiryStatus::Assigned->value,
-                EnquiryStatus::InProgress->value,
-                EnquiryStatus::Completed->value,
-                EnquiryStatus::Cancelled->value,
-            ])],
+            'status' => ['required', 'string', Rule::in(
+                array_column(ProjectStatus::cases(), 'value')
+            )],
         ];
     }
 }

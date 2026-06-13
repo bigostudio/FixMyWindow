@@ -22,6 +22,14 @@ class ProjectController extends Controller
         private readonly SurveyService            $surveyService,
     ) {}
 
+    public function statuses(): JsonResponse
+    {
+        return response()->json([
+            'data'    => $this->projectService->getStatuses(),
+            'message' => 'OK',
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $perPage = min((int) $request->query('limit', 20), 100);

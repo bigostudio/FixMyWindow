@@ -3,19 +3,21 @@
 namespace App\Services;
 
 use App\Exceptions\BusinessRuleException;
-use App\Models\User;
 use App\Repositories\Interfaces\ProjectAssignmentRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
+use App\Support\Enums\AssignmentSection;
 use App\Support\Enums\Role;
-use Illuminate\Support\Collection;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ProjectAssignmentService
 {
-    private const ASSIGNABLE_ROLES = [
-        Role::OperationsManager->value,
-        Role::Supervisor->value,
-        Role::Technician->value,
+    /** Roles allowed per assignment section */
+    private const SECTION_ROLES = [
+        AssignmentSection::OpsManager->value   => [Role::Admin->value, Role::OperationsManager->value],
+        AssignmentSection::Supervisor->value   => [Role::Supervisor->value],
+        AssignmentSection::Survey->value       => [Role::Technician->value],
+        AssignmentSection::Measurement->value  => [Role::Technician->value],
+        AssignmentSection::Installation->value => [Role::Technician->value],
     ];
 
     public function __construct(
@@ -23,68 +25,67 @@ class ProjectAssignmentService
         private readonly UserRepositoryInterface $userRepo,
     ) {}
 
-    public function assignStaff(int $projectId, array $userIds, int $assignedBy): Collection
+    /**
+     * Full replace: accepts a section-keyed map of user ID arrays.
+     * Clears all existing assignments for the enquiry then inserts the new set.
+     *
+     * @param  array<string, int[]>  $sections  e.g. ['ops_manager' => [1,2], 'survey' => [5]]
+     */
+    public function assignStaff(int $enquiryId, array $sections, int $assignedBy): array
     {
-        $project = $this->assignmentRepo->findProject($projectId);
-        if (! $project) {
-            throw new NotFoundHttpException('Project not found.');
+        $enquiry = $this->assignmentRepo->findEnquiry($enquiryId);
+        if (! $enquiry) {
+            throw new NotFoundHttpException('Enquiry not found.');
         }
 
-        $assigned = collect();
+        $now     = now()->toDateTimeString();
+        $records = [];
 
-        foreach ($userIds as $userId) {
-            $user = $this->userRepo->findById($userId);
-
-            if (! $user) {
-                throw new BusinessRuleException("User {$userId} not found.");
+        foreach ($sections as $sectionValue => $userIds) {
+            if (empty($userIds)) {
+                continue;
             }
 
-            if (! in_array($user->role->value, self::ASSIGNABLE_ROLES, true)) {
-                throw new BusinessRuleException(
-                    "User {$user->name} has role '{$user->role->value}' which cannot be assigned to a project. Allowed roles: ops_manager, supervisor, technician."
-                );
+            $allowedRoles = self::SECTION_ROLES[$sectionValue] ?? null;
+
+            foreach ($userIds as $userId) {
+                $user = $this->userRepo->findById($userId);
+
+                if (! $user) {
+                    throw new BusinessRuleException("User ID {$userId} not found.");
+                }
+
+                if ($allowedRoles !== null && ! in_array($user->role->value, $allowedRoles, true)) {
+                    $allowed = implode(', ', $allowedRoles);
+                    throw new BusinessRuleException(
+                        "User {$user->name} (role: {$user->role->value}) cannot be assigned to section '{$sectionValue}'. Allowed roles: {$allowed}."
+                    );
+                }
+
+                $records[] = [
+                    'enquiry_id'         => $enquiryId,
+                    'user_id'            => $userId,
+                    'role'               => $user->role->value,
+                    'assignment_section' => $sectionValue,
+                    'assigned_by'        => $assignedBy,
+                    'created_at'         => $now,
+                    'updated_at'         => $now,
+                ];
             }
-
-            if ($this->assignmentRepo->existsForUser($projectId, $userId)) {
-                throw new BusinessRuleException("User {$user->name} is already assigned to this project.");
-            }
-
-            $assignment = $this->assignmentRepo->create([
-                'project_id'  => $projectId,
-                'user_id'     => $userId,
-                'role'        => $user->role->value,
-                'assigned_by' => $assignedBy,
-            ]);
-
-            $assignment->setRelation('user', $user);
-            $assigned->push($assignment);
         }
 
-        return $assigned;
+        $this->assignmentRepo->replaceAll($enquiryId, $records);
+
+        return $this->assignmentRepo->getTeamGrouped($enquiryId);
     }
 
-    public function removeAssignment(int $projectId, int $assignmentId): void
+    public function getTeam(int $enquiryId): array
     {
-        $project = $this->assignmentRepo->findProject($projectId);
-        if (! $project) {
-            throw new NotFoundHttpException('Project not found.');
+        $enquiry = $this->assignmentRepo->findEnquiry($enquiryId);
+        if (! $enquiry) {
+            throw new NotFoundHttpException('Enquiry not found.');
         }
 
-        $assignment = $this->assignmentRepo->findAssignment($assignmentId);
-        if (! $assignment || $assignment->project_id !== $projectId) {
-            throw new NotFoundHttpException('Assignment not found.');
-        }
-
-        $this->assignmentRepo->delete($assignment);
-    }
-
-    public function getTeam(int $projectId): Collection
-    {
-        $project = $this->assignmentRepo->findProject($projectId);
-        if (! $project) {
-            throw new NotFoundHttpException('Project not found.');
-        }
-
-        return $this->assignmentRepo->getTeam($projectId);
+        return $this->assignmentRepo->getTeamGrouped($enquiryId);
     }
 }

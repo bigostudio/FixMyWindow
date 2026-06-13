@@ -2,45 +2,57 @@
 
 namespace App\Repositories\Eloquent;
 
-use App\Models\Project;
+use App\Models\Enquiry;
 use App\Models\ProjectAssignment;
 use App\Repositories\Interfaces\ProjectAssignmentRepositoryInterface;
-use Illuminate\Support\Collection;
+use App\Support\Enums\AssignmentSection;
+use Illuminate\Support\Facades\DB;
 
 class EloquentProjectAssignmentRepository implements ProjectAssignmentRepositoryInterface
 {
-    public function findProject(int $id): ?Project
+    public function findEnquiry(int $id): ?Enquiry
     {
-        return Project::find($id);
+        return Enquiry::find($id);
     }
 
-    public function getTeam(int $projectId): Collection
+    public function replaceAll(int $enquiryId, array $records): void
     {
-        return ProjectAssignment::with('user')
-            ->where('project_id', $projectId)
+        DB::transaction(function () use ($enquiryId, $records) {
+            ProjectAssignment::where('enquiry_id', $enquiryId)->delete();
+
+            if (! empty($records)) {
+                ProjectAssignment::insert($records);
+            }
+        });
+    }
+
+    public function getTeamGrouped(int $enquiryId): array
+    {
+        $rows = ProjectAssignment::with('user')
+            ->where('enquiry_id', $enquiryId)
             ->orderBy('created_at')
             ->get();
-    }
 
-    public function findAssignment(int $assignmentId): ?ProjectAssignment
-    {
-        return ProjectAssignment::find($assignmentId);
-    }
+        $grouped = [];
+        foreach (AssignmentSection::cases() as $section) {
+            $grouped[$section->value] = [];
+        }
 
-    public function existsForUser(int $projectId, int $userId): bool
-    {
-        return ProjectAssignment::where('project_id', $projectId)
-            ->where('user_id', $userId)
-            ->exists();
-    }
+        foreach ($rows as $row) {
+            $key = $row->assignment_section instanceof AssignmentSection
+                ? $row->assignment_section->value
+                : $row->assignment_section;
 
-    public function create(array $data): ProjectAssignment
-    {
-        return ProjectAssignment::create($data);
-    }
+            if (array_key_exists($key, $grouped)) {
+                $grouped[$key][] = [
+                    'id'    => $row->user->id,
+                    'name'  => $row->user->name,
+                    'phone' => $row->user->phone,
+                    'role'  => $row->role,
+                ];
+            }
+        }
 
-    public function delete(ProjectAssignment $assignment): void
-    {
-        $assignment->delete();
+        return $grouped;
     }
 }

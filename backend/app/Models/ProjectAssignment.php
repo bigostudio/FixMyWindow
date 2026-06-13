@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Enums\AssignmentSection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,15 +12,20 @@ class ProjectAssignment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'project_id',
+        'enquiry_id',
         'user_id',
         'role',
+        'assignment_section',
         'assigned_by',
     ];
 
-    public function project(): BelongsTo
+    protected $casts = [
+        'assignment_section' => AssignmentSection::class,
+    ];
+
+    public function enquiry(): BelongsTo
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Enquiry::class);
     }
 
     public function user(): BelongsTo

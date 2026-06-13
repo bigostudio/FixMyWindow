@@ -2,21 +2,16 @@
 
 namespace App\Repositories\Interfaces;
 
-use App\Models\Project;
-use App\Models\ProjectAssignment;
+use App\Models\Enquiry;
 use Illuminate\Support\Collection;
 
 interface ProjectAssignmentRepositoryInterface
 {
-    public function findProject(int $id): ?Project;
+    public function findEnquiry(int $id): ?Enquiry;
 
-    public function getTeam(int $projectId): Collection;
+    /** Delete all current assignments for the enquiry, then bulk-insert new ones. */
+    public function replaceAll(int $enquiryId, array $records): void;
 
-    public function findAssignment(int $assignmentId): ?ProjectAssignment;
-
-    public function existsForUser(int $projectId, int $userId): bool;
-
-    public function create(array $data): ProjectAssignment;
-
-    public function delete(ProjectAssignment $assignment): void;
+    /** Return assignments grouped by section: ['ops_manager' => [...], ...] */
+    public function getTeamGrouped(int $enquiryId): array;
 }

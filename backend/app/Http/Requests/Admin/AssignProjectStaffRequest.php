@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\Enums\AssignmentSection;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class AssignProjectStaffRequest extends FormRequest
 {
@@ -13,19 +15,23 @@ class AssignProjectStaffRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'user_ids'   => ['required', 'array', 'min:1'],
-            'user_ids.*' => ['required', 'integer', 'min:1'],
-        ];
+        $sections = array_column(AssignmentSection::cases(), 'value');
+
+        $rules = [];
+        foreach ($sections as $section) {
+            $rules[$section]        = ['nullable', 'array'];
+            $rules["{$section}.*"]  = ['integer', 'min:1', Rule::exists('users', 'id')];
+        }
+
+        return $rules;
     }
 
     public function messages(): array
     {
         return [
-            'user_ids.required'   => 'At least one user ID is required.',
-            'user_ids.array'      => 'user_ids must be an array.',
-            'user_ids.min'        => 'Provide at least one user ID.',
-            'user_ids.*.integer'  => 'Each user ID must be an integer.',
+            '*.array'    => 'Each section must be an array of user IDs.',
+            '*.*.integer' => 'Each user ID must be an integer.',
+            '*.*.exists'  => 'One or more user IDs do not exist.',
         ];
     }
 }

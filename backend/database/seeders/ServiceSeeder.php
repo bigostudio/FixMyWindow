@@ -10,15 +10,63 @@ class ServiceSeeder extends Seeder
 {
     public function run(): void
     {
-        $installation = ServiceCategory::firstOrCreate(
-            ['name' => 'Window Installation'],
-            ['description' => 'New window installation services', 'is_active' => true],
-        );
+        // Rename existing categories if they still carry the old names
+        ServiceCategory::where('name', 'Window Installation')->update(['name' => 'New Window Installation']);
+        ServiceCategory::where('name', 'Window Repair')->update(['name' => 'Window Servicing & Repair']);
 
-        $repair = ServiceCategory::firstOrCreate(
-            ['name' => 'Window Repair'],
-            ['description' => 'Window repair and restoration services', 'is_active' => true],
-        );
+        $categories = [
+            [
+                'name'        => 'New Window Installation',
+                'description' => 'New window installation services for homes and offices.',
+                'is_active'   => true,
+            ],
+            [
+                'name'        => 'Annual Maintenance Contracts (AMC)',
+                'description' => 'Structured AMC plans for preventive upkeep and priority support.',
+                'is_active'   => true,
+            ],
+            [
+                'name'        => 'Window Servicing & Repair',
+                'description' => 'Professional servicing and corrective maintenance for installed window systems.',
+                'is_active'   => false,
+            ],
+            [
+                'name'        => 'Glass Replacement',
+                'description' => 'Replace broken or damaged window glass panels quickly and safely.',
+                'is_active'   => false,
+            ],
+            [
+                'name'        => 'Handle Repair',
+                'description' => 'Fix or replace window handles, locks, and hardware parts.',
+                'is_active'   => false,
+            ],
+            [
+                'name'        => 'Weather Sealing',
+                'description' => 'Improve insulation and weatherproofing for existing windows.',
+                'is_active'   => false,
+            ],
+            [
+                'name'        => 'Façade & Window Cleaning',
+                'description' => 'Professional cleaning for façades, glazing, and aluminium/uPVC frames.',
+                'is_active'   => false,
+            ],
+            [
+                'name'        => 'Inspection & Assessment',
+                'description' => 'Professional inspection and damage assessment before execution.',
+                'is_active'   => false,
+            ],
+        ];
+
+        $categoryModels = [];
+        foreach ($categories as $data) {
+            $categoryModels[$data['name']] = ServiceCategory::updateOrCreate(
+                ['name' => $data['name']],
+                ['description' => $data['description'], 'is_active' => $data['is_active']],
+            );
+        }
+
+        $installation = $categoryModels['New Window Installation'];
+        $repair       = $categoryModels['Window Servicing & Repair'];
 
         $services = [
             [

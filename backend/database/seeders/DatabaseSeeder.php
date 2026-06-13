@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             EnquiryCounterSeeder::class,
             ServiceSeeder::class,
+            ProjectStatusSeeder::class,
         ]);
     }
 }

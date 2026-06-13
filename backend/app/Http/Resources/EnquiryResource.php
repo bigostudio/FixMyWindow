@@ -13,6 +13,7 @@ class EnquiryResource extends JsonResource
             'id'              => $this->id,
             'booking_id'      => $this->enquiry_number,
             'status'          => $this->status->value,
+            'status_label'    => $this->status->label(),
             'type'            => $this->type->value,
 
             'service'         => [
@@ -27,6 +28,12 @@ class EnquiryResource extends JsonResource
             'inspection_type' => $this->inspection_type->value,
             'inspection_fee'  => $this->inspection_fee,
             'payment_status'  => $this->payment_status->value,
+
+            'progress'        => [
+                'total_units'      => $this->total_units,
+                'units_completed'  => $this->units_completed,
+                'progress_percent' => $this->progress_percent,
+            ],
 
             'location'        => [
                 'latitude'  => $this->latitude,
