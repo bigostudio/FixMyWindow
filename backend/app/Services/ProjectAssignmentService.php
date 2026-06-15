@@ -5,19 +5,14 @@ namespace App\Services;
 use App\Exceptions\BusinessRuleException;
 use App\Repositories\Interfaces\ProjectAssignmentRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
-use App\Support\Enums\AssignmentSection;
 use App\Support\Enums\Role;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ProjectAssignmentService
 {
-    /** Roles allowed per assignment section */
-    private const SECTION_ROLES = [
-        AssignmentSection::OpsManager->value   => [Role::Admin->value, Role::OperationsManager->value],
-        AssignmentSection::Supervisor->value   => [Role::Supervisor->value],
-        AssignmentSection::Survey->value       => [Role::Technician->value],
-        AssignmentSection::Measurement->value  => [Role::Technician->value],
-        AssignmentSection::Installation->value => [Role::Technician->value],
+    private const BLOCKED_ROLES = [
+        Role::Admin->value,
+        Role::OperationsManager->value,
     ];
 
     public function __construct(
@@ -46,8 +41,6 @@ class ProjectAssignmentService
                 continue;
             }
 
-            $allowedRoles = self::SECTION_ROLES[$sectionValue] ?? null;
-
             foreach ($userIds as $userId) {
                 $user = $this->userRepo->findById($userId);
 
@@ -55,10 +48,9 @@ class ProjectAssignmentService
                     throw new BusinessRuleException("User ID {$userId} not found.");
                 }
 
-                if ($allowedRoles !== null && ! in_array($user->role->value, $allowedRoles, true)) {
-                    $allowed = implode(', ', $allowedRoles);
+                if (in_array($user->role->value, self::BLOCKED_ROLES, true)) {
                     throw new BusinessRuleException(
-                        "User {$user->name} (role: {$user->role->value}) cannot be assigned to section '{$sectionValue}'. Allowed roles: {$allowed}."
+                        "User {$user->name} (role: {$user->role->value}) cannot be assigned to project sections."
                     );
                 }
 

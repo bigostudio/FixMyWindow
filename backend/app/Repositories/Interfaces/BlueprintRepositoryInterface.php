@@ -16,4 +16,6 @@ interface BlueprintRepositoryInterface
     public function create(array $data): Blueprint;
 
     public function update(Blueprint $blueprint, array $data): Blueprint;
+
+    public function delete(Blueprint $blueprint): void;
 }

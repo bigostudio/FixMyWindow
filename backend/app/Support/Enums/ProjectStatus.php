@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 enum ProjectStatus: string
 {
+    case Draft                 = 'draft';
     case New                   = 'new';
     case SurveyInitiated       = 'survey_initiated';
     case SurveyCompleted       = 'survey_completed';

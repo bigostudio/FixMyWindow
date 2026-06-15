@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CreateUserRequest;
 use App\Http\Resources\StaffResource;
+use App\Http\Resources\StaffWithStatsResource;
 use App\Http\Resources\UserResource;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -65,5 +66,28 @@ class UserController extends Controller
         $this->userService->reject($id);
 
         return response()->json(['message' => 'User rejected and removed.']);
+    }
+
+    public function byRole(Request $request): JsonResponse
+    {
+        $role    = (string) $request->query('role', '');
+        $perPage = min((int) $request->query('limit', 20), 100);
+        $sort    = (string) $request->query('sort', 'name');
+        $order   = (string) $request->query('order', 'asc');
+
+        ['paginator' => $paginator, 'summary' => $summary] = $this->userService->getStaffByRole(
+            $role, $perPage, $sort, $order
+        );
+
+        return response()->json([
+            'summary' => $summary,
+            'items'   => StaffWithStatsResource::collection($paginator->items()),
+            'meta'    => [
+                'current_page' => $paginator->currentPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+                'last_page'    => $paginator->lastPage(),
+            ],
+        ]);
     }
 }

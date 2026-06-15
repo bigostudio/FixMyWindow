@@ -32,13 +32,19 @@ Route::prefix('v1')->group(function () {
         Route::put('profile',      [CustomerProfileController::class, 'update']);
 
         // ─── Customer Enquiries ───────────────────────────────────────────
-        Route::post('enquiries/book',              [CustomerEnquiryController::class, 'book']);
+        Route::post('enquiries/initiate',          [CustomerEnquiryController::class, 'initiate']);
+        Route::post('enquiries/{id}/confirm',      [CustomerEnquiryController::class, 'confirm']);
         Route::get('enquiries',                    [CustomerEnquiryController::class, 'index']);
         Route::get('enquiries/{id}',               [CustomerEnquiryController::class, 'show']);
         Route::get('addresses',                    [CustomerEnquiryController::class, 'addresses']);
-        Route::get('enquiries/{id}/blueprint',     [CustomerBlueprintController::class, 'show']);
-        Route::post('enquiries/{id}/blueprint',    [CustomerBlueprintController::class, 'store']);
-        Route::put('enquiries/{id}/blueprint',     [CustomerBlueprintController::class, 'update']);
+
+        // ─── Blueprint (optional for B2C, expected for B2B) ──────────────
+        Route::post('enquiries/blueprint/generate',   [CustomerBlueprintController::class, 'generate']);
+        Route::put('enquiries/blueprint/{id}',        [CustomerBlueprintController::class, 'updateDraft']);
+
+        // ─── Customer Blueprints ──────────────────────────────────────────
+        Route::get('blueprints',               [CustomerBlueprintController::class, 'index']);
+        Route::get('enquiries/{id}/blueprint', [CustomerBlueprintController::class, 'show']);
     });
 
     // ─── Admin ────────────────────────────────────────────────────────────
@@ -59,6 +65,7 @@ Route::prefix('v1')->group(function () {
             Route::middleware('role:ops_admin')->group(function () {
                 Route::get('users/staff',        [AdminUserController::class, 'staff']);
                 Route::get('users/pending',      [AdminUserController::class, 'pending']);
+                Route::get('users/by-role',      [AdminUserController::class, 'byRole']);
                 Route::post('users',             [AdminUserController::class, 'store']);
                 Route::put('users/{id}/approve', [AdminUserController::class, 'approve']);
                 Route::put('users/{id}/reject',  [AdminUserController::class, 'reject']);
@@ -71,8 +78,10 @@ Route::prefix('v1')->group(function () {
                 Route::get('enquiries/{id}',                       [AdminEnquiryController::class, 'show']);
                 Route::put('enquiries/{id}/status',                [AdminEnquiryController::class, 'updateStatus']);
                 Route::get('enquiries/{id}/team',                  [AdminEnquiryController::class, 'team']);
+                Route::post('enquiries/{id}/blueprint',             [AdminBlueprintController::class, 'store']);
                 Route::put('enquiries/{id}/blueprint',              [AdminBlueprintController::class, 'update']);
                 Route::get('enquiries/{id}/blueprint',              [AdminBlueprintController::class, 'showByEnquiry']);
+                Route::delete('enquiries/{id}/blueprint',           [AdminBlueprintController::class, 'destroy']);
                 Route::get('customers/{id}/blueprints',             [AdminBlueprintController::class, 'byCustomer']);
             });
 

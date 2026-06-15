@@ -49,6 +49,16 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
     public function paginateAll(int $perPage, string $sort, string $order): LengthAwarePaginator
     {
         return Enquiry::with(['customer', 'service', 'assignments.user'])
+                      ->whereNotNull('enquiry_number')
+                      ->orderBy($sort, $order)
+                      ->paginate($perPage);
+    }
+
+    public function paginateForUser(int $userId, int $perPage, string $sort, string $order): LengthAwarePaginator
+    {
+        return Enquiry::with(['customer', 'service', 'assignments.user'])
+                      ->whereNotNull('enquiry_number')
+                      ->whereHas('assignments', fn ($q) => $q->where('user_id', $userId))
                       ->orderBy($sort, $order)
                       ->paginate($perPage);
     }

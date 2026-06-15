@@ -21,4 +21,8 @@ interface UserRepositoryInterface
     public function getPending(int $page, int $limit): LengthAwarePaginator;
 
     public function delete(User $user): void;
+
+    public function getByRoleWithStats(string $role, int $perPage, string $sort, string $order): LengthAwarePaginator;
+
+    public function getSummaryByRole(string $role): array;
 }

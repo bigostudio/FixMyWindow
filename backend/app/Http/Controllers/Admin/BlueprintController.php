@@ -10,6 +10,7 @@ use App\Services\BlueprintService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+
 class BlueprintController extends Controller
 {
     public function __construct(
@@ -66,5 +67,16 @@ class BlueprintController extends Controller
             'data'    => BlueprintResource::collection($blueprints),
             'message' => 'OK',
         ]);
+    }
+
+    public function destroy(string $id): JsonResponse
+    {
+        try {
+            $this->blueprintService->deleteForAdmin((int) $id);
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+
+        return response()->json(['message' => 'Blueprint deleted successfully.']);
     }
 }

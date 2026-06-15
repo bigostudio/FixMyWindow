@@ -6,6 +6,7 @@ use App\Models\Blueprint;
 use App\Models\Enquiry;
 use App\Repositories\Interfaces\BlueprintRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class EloquentBlueprintRepository implements BlueprintRepositoryInterface
 {
@@ -27,9 +28,7 @@ class EloquentBlueprintRepository implements BlueprintRepositoryInterface
 
     public function findByCustomerId(int $customerId): Collection
     {
-        return Blueprint::whereHas('enquiry', fn ($q) => $q->where('customer_id', $customerId))
-            ->with(['enquiry' => fn ($q) => $q->select('id', 'enquiry_number', 'customer_id', 'blueprint_id')])
-            ->get();
+        return Blueprint::where('customer_id', $customerId)->get();
     }
 
     public function create(array $data): Blueprint
@@ -41,5 +40,15 @@ class EloquentBlueprintRepository implements BlueprintRepositoryInterface
     {
         $blueprint->update($data);
         return $blueprint->fresh();
+    }
+
+    public function delete(Blueprint $blueprint): void
+    {
+        DB::transaction(function () use ($blueprint) {
+            Enquiry::where('blueprint_id', $blueprint->id)
+                ->update(['blueprint_id' => null]);
+
+            $blueprint->delete();
+        });
     }
 }

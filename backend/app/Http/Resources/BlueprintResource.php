@@ -11,6 +11,11 @@ class BlueprintResource extends JsonResource
     {
         return [
             'id'                 => $this->id,
+            'customerId'         => $this->customer_id,
+            'customer'           => $this->whenLoaded('customer', fn () => [
+                'id'   => $this->customer->id,
+                'name' => $this->customer->name,
+            ]),
             'societyName'        => $this->society_name,
             'towerCount'         => $this->tower_count,
             'floorsPerTower'     => $this->floors_per_tower,
@@ -19,10 +24,6 @@ class BlueprintResource extends JsonResource
             'parkingFloors'      => $this->parking_floors,
             'officeFloors'       => $this->office_floors,
             'towers'             => $this->towers,
-            'enquiry'            => $this->whenLoaded('enquiry', fn () => [
-                'id'             => $this->enquiry->id,
-                'enquiry_number' => $this->enquiry->enquiry_number,
-            ]),
             'created_at'         => $this->created_at?->toISOString(),
             'updated_at'         => $this->updated_at?->toISOString(),
         ];

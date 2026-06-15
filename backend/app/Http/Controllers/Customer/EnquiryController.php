@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\BookEnquiryRequest;
+use App\Http\Requests\Customer\InitiateEnquiryRequest;
 use App\Http\Resources\CustomerAddressResource;
 use App\Http\Resources\EnquiryResource;
 use App\Services\EnquiryService;
@@ -55,16 +55,24 @@ class EnquiryController extends Controller
         return response()->json(CustomerAddressResource::collection($addresses));
     }
 
-    public function book(BookEnquiryRequest $request): JsonResponse
+    public function initiate(InitiateEnquiryRequest $request): JsonResponse
     {
-        $customer = auth('api')->user();
-
-        $enquiry = $this->enquiryService->book(
-            customerId: $customer->id,
-            actorName:  $customer->name ?? $request->input('billing.name'),
-            data:       $request->validated(),
+        $enquiry = $this->enquiryService->initiate(
+            customer: auth('api')->user(),
+            data:     $request->validated(),
         );
 
         return response()->json((new EnquiryResource($enquiry))->resolve(), 201);
+    }
+
+    public function confirm(int $id): JsonResponse
+    {
+        try {
+            $enquiry = $this->enquiryService->confirm($id, auth('api')->user());
+        } catch (ModelNotFoundException) {
+            return response()->json(['message' => 'Resource not found'], 404);
+        }
+
+        return response()->json((new EnquiryResource($enquiry))->resolve());
     }
 }

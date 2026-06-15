@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\BusinessRuleException;
+use App\Models\Customer;
 use App\Models\Enquiry;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
@@ -12,6 +13,7 @@ use App\Support\Enums\InspectionType;
 use App\Support\Enums\PaymentStatus;
 use App\Support\Enums\ProjectStatus;
 use App\Support\Enums\TimelineActorType;
+use App\Support\Enums\Role;
 use App\Support\Enums\TimelineStatus;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -29,18 +31,50 @@ class EnquiryService
 
     // ── Customer ──────────────────────────────────────────────────────────
 
-    public function book(int $customerId, string $actorName, array $data): Enquiry
+    public function initiate(Customer $customer, array $data): Enquiry
     {
-        if ($data['inspection_type'] === InspectionType::Self->value) {
-            throw new BusinessRuleException('Self inspection is not available in this phase.');
-        }
-
         $service = $this->serviceRepository->findActiveById($data['service_id']);
         if (! $service) {
             throw new BusinessRuleException('The selected service is not available.');
         }
 
-        return DB::transaction(function () use ($customerId, $actorName, $data, $service) {
+        return $this->enquiryRepository->create([
+            'customer_id'     => $customer->id,
+            'service_id'      => $service->id,
+            'type'            => $customer->type->value,
+            'city'            => $data['location']['city'],
+            'property_type'   => $data['property_type'],
+            'material_type'   => $service->material->value,
+            'inspection_type' => InspectionType::Expert->value,
+            'status'          => ProjectStatus::Draft->value,
+            'latitude'        => $data['location']['latitude'],
+            'longitude'       => $data['location']['longitude'],
+            'address'         => $data['location']['address'],
+            'inspection_fee'  => $customer->type === CustomerType::B2C ? 1000 : 0,
+            'payment_status'  => PaymentStatus::Pending->value,
+            'billing_name'    => $data['billing']['name'],
+            'billing_poc'     => $data['billing']['point_of_contact'] ?? null,
+            'billing_gst'     => $data['billing']['gst_number'] ?? null,
+            'billing_phone'   => $data['billing']['phone'],
+            'billing_email'   => $data['billing']['email'] ?? null,
+            'billing_address' => $data['billing']['address'],
+            'booking_date'    => today(),
+        ]);
+    }
+
+    public function confirm(int $enquiryId, Customer $customer): Enquiry
+    {
+        $enquiry = $this->enquiryRepository->findById($enquiryId);
+
+        if (! $enquiry || $enquiry->customer_id !== $customer->id) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        }
+
+        if ($enquiry->status !== ProjectStatus::Draft) {
+            throw new BusinessRuleException('Only draft enquiries can be confirmed.');
+        }
+
+        return DB::transaction(function () use ($enquiry, $customer) {
             $row = DB::table('enquiry_counter')
                 ->where('id', 1)
                 ->lockForUpdate()
@@ -53,47 +87,18 @@ class EnquiryService
 
             $enquiryNumber = sprintf('FMW-%s-%04d', now('UTC')->format('Ymd'), $counter);
 
-            $enquiry = $this->enquiryRepository->create([
-                'enquiry_number'  => $enquiryNumber,
-                'customer_id'     => $customerId,
-                'service_id'      => $service->id,
-                'type'            => CustomerType::B2C->value,
-                'city'            => $data['location']['city'],
-                'property_type'   => $data['property_type'],
-                'material_type'   => $service->material->value,
-                'inspection_type' => $data['inspection_type'],
-                'status'          => ProjectStatus::New->value,
-                'latitude'        => $data['location']['latitude'],
-                'longitude'       => $data['location']['longitude'],
-                'address'         => $data['location']['address'],
-                'inspection_fee'  => 1000,
-                'payment_status'  => PaymentStatus::Paid->value,
-                'billing_name'    => $data['billing']['name'],
-                'billing_poc'     => $data['billing']['point_of_contact'] ?? null,
-                'billing_gst'     => $data['billing']['gst_number'] ?? null,
-                'billing_phone'   => $data['billing']['phone'],
-                'billing_email'   => $data['billing']['email'],
-                'billing_address' => $data['billing']['address'],
-                'booking_date'    => today(),
+            $enquiry = $this->enquiryRepository->update($enquiry, [
+                'enquiry_number' => $enquiryNumber,
+                'status'         => ProjectStatus::New->value,
             ]);
 
             $this->timelineRepository->log([
                 'enquiry_id'  => $enquiry->id,
                 'status'      => TimelineStatus::New->value,
-                'description' => 'Booking created by customer. Expert inspection fee of Rs. 1000 paid.',
+                'description' => 'Booking confirmed by customer.',
                 'actor_type'  => TimelineActorType::Customer->value,
-                'actor_id'    => $customerId,
-                'actor_name'  => $actorName,
-                'created_at'  => now(),
-            ]);
-
-            $this->timelineRepository->log([
-                'enquiry_id'  => $enquiry->id,
-                'status'      => TimelineStatus::PaymentReceived->value,
-                'description' => 'Inspection fee of Rs. 1000 received.',
-                'actor_type'  => TimelineActorType::System->value,
-                'actor_id'    => null,
-                'actor_name'  => 'System',
+                'actor_id'    => $customer->id,
+                'actor_name'  => $customer->name ?? 'Customer',
                 'created_at'  => now(),
             ]);
 
@@ -127,12 +132,18 @@ class EnquiryService
 
     // ── Admin — list / show ───────────────────────────────────────────────
 
-    public function listForAdmin(int $perPage, string $sort, string $order): LengthAwarePaginator
+    public function listForAdmin(User $actor, int $perPage, string $sort, string $order): LengthAwarePaginator
     {
         $sort  = in_array($sort, ['created_at', 'booking_date', 'status'], true) ? $sort : 'created_at';
         $order = in_array($order, ['asc', 'desc'], true) ? $order : 'desc';
 
-        return $this->enquiryRepository->paginateAll($perPage, $sort, $order);
+        $adminRoles = [Role::Admin, Role::OperationsManager];
+
+        if (in_array($actor->role, $adminRoles, true)) {
+            return $this->enquiryRepository->paginateAll($perPage, $sort, $order);
+        }
+
+        return $this->enquiryRepository->paginateForUser($actor->id, $perPage, $sort, $order);
     }
 
     public function getById(int $enquiryId): Enquiry

@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Exceptions\BusinessRuleException;
 use App\Exceptions\ConflictException;
 use App\Models\Blueprint;
 use App\Repositories\Interfaces\BlueprintRepositoryInterface;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
+use App\Support\Enums\ProjectStatus;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -52,7 +54,7 @@ class BlueprintService
         }
 
         return DB::transaction(function () use ($enquiry, $data) {
-            $blueprint = $this->blueprintRepo->create($data);
+            $blueprint = $this->blueprintRepo->create(array_merge($data, ['customer_id' => $enquiry->customer_id]));
             $this->enquiryRepo->update($enquiry, ['blueprint_id' => $blueprint->id]);
             return $blueprint;
         });
@@ -73,5 +75,137 @@ class BlueprintService
         }
 
         return $this->blueprintRepo->update($blueprint, $data);
+    }
+
+    public function generateForDraft(int $customerId, array $data): Blueprint
+    {
+        $enquiryId = $data['enquiry_id'];
+        $enquiry   = $this->enquiryRepo->findById($enquiryId);
+
+        if (! $enquiry || $enquiry->customer_id !== $customerId) {
+            throw new NotFoundHttpException('Enquiry not found.');
+        }
+
+        if ($enquiry->status !== ProjectStatus::Draft) {
+            throw new BusinessRuleException('Blueprint can only be created for a draft enquiry.');
+        }
+
+        if ($enquiry->blueprint_id) {
+            throw new ConflictException('A blueprint already exists for this enquiry.');
+        }
+
+        $blueprintData = array_diff_key($data, ['enquiry_id' => true]);
+
+        if (empty($blueprintData['towers'])) {
+            $blueprintData['towers'] = $this->buildTowersJson($blueprintData);
+        }
+
+        return DB::transaction(function () use ($enquiry, $blueprintData, $customerId) {
+            $blueprint = $this->blueprintRepo->create(array_merge($blueprintData, ['customer_id' => $customerId]));
+            $this->enquiryRepo->update($enquiry, ['blueprint_id' => $blueprint->id]);
+            return $blueprint;
+        });
+    }
+
+    private function buildTowersJson(array $data): array
+    {
+        $towerCount         = (int) ($data['tower_count'] ?? 0);
+        $floorsPerTower     = (int) ($data['floors_per_tower'] ?? 0);
+        $flatsPerFloor      = (int) ($data['flats_per_floor'] ?? 0);
+        $includeGroundFloor = (bool) ($data['include_ground_floor'] ?? false);
+        $parkingFloors      = (int) ($data['parking_floors'] ?? 0);
+        $officeFloors       = (int) ($data['office_floors'] ?? 0);
+
+        $towers = [];
+
+        for ($t = 1; $t <= $towerCount; $t++) {
+            $floors = [];
+
+            // Basement / parking floors — deepest first, no flats
+            for ($p = $parkingFloors; $p >= 1; $p--) {
+                $floors[] = [
+                    'level'  => -$p,
+                    'label'  => "Basement B{$p}",
+                    'type'   => 'parking',
+                    'flats'  => [],
+                ];
+            }
+
+            // Ground floor
+            if ($includeGroundFloor) {
+                $flats = [];
+                for ($f = 1; $f <= $flatsPerFloor; $f++) {
+                    $flats[] = ['name' => sprintf('G%02d', $f), 'apertures' => []];
+                }
+                $floors[] = [
+                    'level'  => 0,
+                    'label'  => 'Ground Floor',
+                    'type'   => 'residential',
+                    'flats'  => $flats,
+                ];
+            }
+
+            // Numbered floors — top $officeFloors are office type
+            $residentialCount = max(0, $floorsPerTower - $officeFloors);
+
+            for ($fl = 1; $fl <= $floorsPerTower; $fl++) {
+                $type  = ($fl > $residentialCount) ? 'office' : 'residential';
+                $flats = [];
+                for ($f = 1; $f <= $flatsPerFloor; $f++) {
+                    $flats[] = ['name' => sprintf('%d%02d', $fl, $f), 'apertures' => []];
+                }
+                $floors[] = [
+                    'level'  => $fl,
+                    'label'  => "Floor {$fl}",
+                    'type'   => $type,
+                    'flats'  => $flats,
+                ];
+            }
+
+            $towers[] = [
+                'name'   => "Tower {$t}",
+                'floors' => $floors,
+            ];
+        }
+
+        return $towers;
+    }
+
+    public function updateForDraft(int $enquiryId, int $customerId, array $data): Blueprint
+    {
+        $enquiry = $this->enquiryRepo->findById($enquiryId);
+
+        if (! $enquiry || $enquiry->customer_id !== $customerId) {
+            throw new NotFoundHttpException('Enquiry not found.');
+        }
+
+        if ($enquiry->status !== ProjectStatus::Draft) {
+            throw new ConflictException('Blueprint can only be edited while the enquiry is in draft.');
+        }
+
+        $blueprint = $this->blueprintRepo->findByEnquiryId($enquiryId);
+
+        if (! $blueprint) {
+            throw new NotFoundHttpException('No blueprint found for this enquiry.');
+        }
+
+        return $this->blueprintRepo->update($blueprint, $data);
+    }
+
+    public function deleteForAdmin(int $enquiryId): void
+    {
+        $enquiry = $this->enquiryRepo->findById($enquiryId);
+
+        if (! $enquiry) {
+            throw new NotFoundHttpException('Enquiry not found.');
+        }
+
+        $blueprint = $this->blueprintRepo->findByEnquiryId($enquiryId);
+
+        if (! $blueprint) {
+            throw new NotFoundHttpException('No blueprint found for this enquiry.');
+        }
+
+        $this->blueprintRepo->delete($blueprint);
     }
 }

@@ -38,7 +38,7 @@ class EnquiryController extends Controller
         $sort    = $request->query('sort', 'created_at');
         $order   = $request->query('order', 'desc');
 
-        $paginator = $this->enquiryService->listForAdmin($perPage, $sort, $order);
+        $paginator = $this->enquiryService->listForAdmin(auth()->user(), $perPage, $sort, $order);
 
         return response()->json([
             'items' => AdminBookingResource::collection($paginator->items()),

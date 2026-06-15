@@ -19,6 +19,8 @@ interface EnquiryRepositoryInterface
 
     public function paginateAll(int $perPage, string $sort, string $order): LengthAwarePaginator;
 
+    public function paginateForUser(int $userId, int $perPage, string $sort, string $order): LengthAwarePaginator;
+
     public function update(Enquiry $enquiry, array $data): Enquiry;
 
     public function getDistinctAddressesByCustomer(int $customerId): \Illuminate\Support\Collection;
