@@ -24,7 +24,7 @@ class SurveyService
         private readonly ProjectTimelineRepositoryInterface $timelineRepo,
     ) {}
 
-    public function create(array $data): \App\Models\Survey
+    public function create(array $data, User $actor): \App\Models\Survey
     {
         $enquiry = $this->enquiryRepo->findById($data['enquiry_id']);
         if (! $enquiry) {
@@ -35,27 +35,10 @@ class SurveyService
             throw new BusinessRuleException('A survey has already been initiated for this enquiry.');
         }
 
-        return $this->surveyRepo->create([
-            'enquiry_id'  => $data['enquiry_id'],
-            'surveyor_id' => $data['surveyor_id'] ?? null,
-        ]);
-    }
-
-    public function initiate(int $enquiryId, ?int $surveyorId, User $actor): \App\Models\Survey
-    {
-        $enquiry = $this->enquiryRepo->findById($enquiryId);
-        if (! $enquiry) {
-            throw new NotFoundHttpException('Enquiry not found.');
-        }
-
-        if ($this->surveyRepo->findByEnquiryId($enquiryId)) {
-            throw new BusinessRuleException('A survey has already been initiated for this enquiry.');
-        }
-
-        return DB::transaction(function () use ($enquiry, $surveyorId, $actor) {
+        return DB::transaction(function () use ($enquiry, $data, $actor) {
             $survey = $this->surveyRepo->create([
                 'enquiry_id'  => $enquiry->id,
-                'surveyor_id' => $surveyorId,
+                'surveyor_id' => $data['surveyor_id'] ?? null,
             ]);
 
             $enquiry->update(['status' => ProjectStatus::SurveyInitiated->value]);

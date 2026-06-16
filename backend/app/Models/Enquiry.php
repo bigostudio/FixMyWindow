@@ -66,7 +66,7 @@ class Enquiry extends Model
             'payment_status'        => PaymentStatus::class,
             'latitude'              => 'decimal:7',
             'longitude'             => 'decimal:7',
-            'booking_date'          => 'date',
+            'booking_date'          => 'datetime',
             'project_details'       => 'array',
             'material_status'       => 'array',
             'quality_checks'        => 'array',
@@ -97,5 +97,10 @@ class Enquiry extends Model
     public function timeline(): HasMany
     {
         return $this->hasMany(ProjectTimeline::class)->orderBy('created_at');
+    }
+
+    public function survey(): HasOne
+    {
+        return $this->hasOne(Survey::class);
     }
 }

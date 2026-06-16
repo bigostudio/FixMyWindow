@@ -7,6 +7,7 @@ use App\Http\Controllers\Customer\ProfileController as CustomerProfileController
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\BlueprintController as AdminBlueprintController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
+use App\Http\Controllers\Admin\EnquiryNoteController as AdminEnquiryNoteController;
 use App\Http\Controllers\Customer\BlueprintController as CustomerBlueprintController;
 use App\Http\Controllers\Admin\MeasurementController as AdminMeasurementController;
 use App\Http\Controllers\Admin\SurveyController as AdminSurveyController;
@@ -77,6 +78,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('enquiries/{id}',                       [AdminEnquiryController::class, 'show']);
                 Route::put('enquiries/{id}/status',                [AdminEnquiryController::class, 'updateStatus']);
                 Route::get('enquiries/{id}/team',                  [AdminEnquiryController::class, 'team']);
+                Route::get('enquiries/{id}/notes',                 [AdminEnquiryNoteController::class, 'index']);
+                Route::post('enquiry-notes',                       [AdminEnquiryNoteController::class, 'store']);
                 Route::post('customers/{id}/blueprints',            [AdminBlueprintController::class, 'store']);
                 Route::get('customers/{id}/blueprints',             [AdminBlueprintController::class, 'byCustomer']);
                 Route::get('enquiries/{id}/blueprint',              [AdminBlueprintController::class, 'showByEnquiry']);
@@ -86,7 +89,6 @@ Route::prefix('v1')->group(function () {
 
             // ─── Enquiry ops — ops_admin and ops_manager only ─────────────
             Route::middleware('role:ops_admin,ops_manager')->group(function () {
-                Route::post('enquiries/{id}/initiate-survey',      [AdminEnquiryController::class, 'initiateSurvey']);
                 Route::put('enquiries/{id}/assign',                [AdminEnquiryController::class, 'assignStaff']);
             });
 

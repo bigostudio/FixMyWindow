@@ -19,10 +19,10 @@ class SurveyController extends Controller
 
     public function store(CreateSurveyRequest $request): JsonResponse
     {
-        $survey = $this->service->create($request->validated());
+        $survey = $this->service->create($request->validated(), auth()->user());
 
         return response()->json([
-            'data'    => new SurveyResource($survey->load(['enquiry', 'surveyor'])),
+            'data'    => new SurveyResource($survey),
             'message' => 'Survey created successfully.',
         ], 201);
     }

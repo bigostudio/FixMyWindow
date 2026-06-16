@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class InitiateSurveyRequest extends FormRequest
+class CreateEnquiryNoteRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,7 +14,8 @@ class InitiateSurveyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'surveyor_id' => ['nullable', 'integer', 'exists:users,id'],
+            'enquiry_id' => ['required', 'integer', 'exists:enquiries,id'],
+            'content'    => ['required', 'string'],
         ];
     }
 }

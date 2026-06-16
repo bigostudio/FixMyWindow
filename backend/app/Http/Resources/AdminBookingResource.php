@@ -25,7 +25,7 @@ class AdminBookingResource extends JsonResource
             'status_label'     => $this->status->label(),
             'progress_percent' => $this->progress_percent,
             'team'             => $team,
-            'booking_date'     => $this->booking_date?->toDateString(),
+            'booking_date'     => $this->booking_date?->toISOString(),
             'created_date'     => $this->created_at?->toDateString(),
         ];
     }

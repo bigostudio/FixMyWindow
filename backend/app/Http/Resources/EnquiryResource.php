@@ -51,7 +51,7 @@ class EnquiryResource extends JsonResource
                 'address'           => $this->billing_address,
             ],
 
-            'booking_date'    => $this->booking_date?->toDateString(),
+            'booking_date'    => $this->booking_date?->toISOString(),
             'created_at'      => $this->created_at?->toISOString(),
         ];
     }

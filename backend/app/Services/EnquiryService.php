@@ -76,14 +76,14 @@ class EnquiryService
                 'longitude'       => $data['location']['longitude'],
                 'address'         => $data['location']['address'],
                 'inspection_fee'  => $customer->type === CustomerType::B2C ? 1000 : 0,
-                'payment_status'  => PaymentStatus::Pending->value,
+                'payment_status'  => PaymentStatus::Paid->value,
                 'billing_name'    => $data['billing']['name'],
                 'billing_poc'     => $data['billing']['point_of_contact'] ?? null,
                 'billing_gst'     => $data['billing']['gst_number'] ?? null,
                 'billing_phone'   => $data['billing']['phone'],
                 'billing_email'   => $data['billing']['email'] ?? null,
                 'billing_address' => $data['billing']['address'],
-                'booking_date'    => today(),
+                'booking_date'    => now(),
                 'blueprint_id'    => $blueprintId,
             ]);
 

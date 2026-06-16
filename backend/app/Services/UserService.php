@@ -29,6 +29,7 @@ class UserService
     {
         return $this->userRepository->getByRoles([
             Role::Admin->value,
+            Role::OperationsManager->value,
             Role::Supervisor->value,
             Role::Technician->value,
         ]);

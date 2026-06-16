@@ -5,16 +5,10 @@ namespace App\Services;
 use App\Exceptions\BusinessRuleException;
 use App\Repositories\Interfaces\ProjectAssignmentRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
-use App\Support\Enums\Role;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ProjectAssignmentService
 {
-    private const BLOCKED_ROLES = [
-        Role::Admin->value,
-        Role::OperationsManager->value,
-    ];
-
     public function __construct(
         private readonly ProjectAssignmentRepositoryInterface $assignmentRepo,
         private readonly UserRepositoryInterface $userRepo,
@@ -46,12 +40,6 @@ class ProjectAssignmentService
 
                 if (! $user) {
                     throw new BusinessRuleException("User ID {$userId} not found.");
-                }
-
-                if (in_array($user->role->value, self::BLOCKED_ROLES, true)) {
-                    throw new BusinessRuleException(
-                        "User {$user->name} (role: {$user->role->value}) cannot be assigned to project sections."
-                    );
                 }
 
                 $records[] = [

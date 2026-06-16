@@ -76,8 +76,9 @@ class AdminEnquiryDetailResource extends JsonResource
             ),
 
             'final_completion_date' => $this->final_completion_date?->toDateString(),
+            'survey_id'      => $this->survey?->id,
             'blueprint_id'   => $this->blueprint_id,
-            'booking_date'   => $this->booking_date?->toDateString(),
+            'booking_date'   => $this->booking_date?->toISOString(),
             'created_at'     => $this->created_at?->toISOString(),
             'updated_at'     => $this->updated_at?->toISOString(),
         ];
