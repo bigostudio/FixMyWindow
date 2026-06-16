@@ -16,6 +16,7 @@ enum TimelineStatus: string
     case TeamAssigned         = 'Team Assigned';
     case WorkInProgress       = 'Work In Progress';
     case OnTrack              = 'On Track';
+    case OnHold               = 'On Hold';
     case AtRisk               = 'At Risk';
     case Delayed              = 'Delayed';
     case DueToDependency      = 'Due to Dependency';

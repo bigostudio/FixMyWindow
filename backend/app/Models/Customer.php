@@ -41,6 +41,11 @@ class Customer extends Authenticatable implements JWTSubject
         return $this->hasMany(Blueprint::class);
     }
 
+    public function enquiries(): HasMany
+    {
+        return $this->hasMany(Enquiry::class);
+    }
+
     public function getJWTIdentifier(): mixed
     {
         return $this->getKey();

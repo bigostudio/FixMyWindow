@@ -6,6 +6,7 @@ use App\Http\Controllers\Customer\EnquiryController as CustomerEnquiryController
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\BlueprintController as AdminBlueprintController;
+use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Admin\EnquiryNoteController as AdminEnquiryNoteController;
 use App\Http\Controllers\Customer\BlueprintController as CustomerBlueprintController;
@@ -73,6 +74,7 @@ Route::prefix('v1')->group(function () {
 
             // ─── Enquiries — all internal roles ──────────────────────────
             Route::middleware('role:ops_admin,ops_manager,supervisor,technician')->group(function () {
+                Route::get('customers',                            [AdminCustomerController::class, 'index']);
                 Route::get('enquiry-statuses',                     [AdminEnquiryController::class, 'statuses']);
                 Route::get('enquiries',                            [AdminEnquiryController::class, 'index']);
                 Route::get('enquiries/{id}',                       [AdminEnquiryController::class, 'show']);

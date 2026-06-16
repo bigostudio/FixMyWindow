@@ -89,7 +89,7 @@ class SurveyService
             $enquiry = $this->enquiryRepo->findById($survey->enquiry_id);
 
             if ($outcomeEnum === SurveyOutcome::Go) {
-                $enquiry->update(['status' => ProjectStatus::SurveyCompleted->value]);
+                $enquiry->update(['status' => ProjectStatus::MeasurementInitiated->value]);
 
                 $this->timelineRepo->log([
                     'enquiry_id'  => $survey->enquiry_id,
@@ -120,8 +120,18 @@ class SurveyService
                     'actor_id'    => $actor->id,
                     'actor_name'  => $actor->name,
                 ]);
+            } elseif ($outcomeEnum === SurveyOutcome::Hold) {
+                $enquiry->update(['status' => ProjectStatus::OnHold->value]);
+
+                $this->timelineRepo->log([
+                    'enquiry_id'  => $survey->enquiry_id,
+                    'status'      => TimelineStatus::OnHold->value,
+                    'description' => 'Survey outcome held for manual review.',
+                    'actor_type'  => $actor->role->value,
+                    'actor_id'    => $actor->id,
+                    'actor_name'  => $actor->name,
+                ]);
             }
-            // HOLD: save outcome only, no status change
         });
 
         return $survey->refresh();

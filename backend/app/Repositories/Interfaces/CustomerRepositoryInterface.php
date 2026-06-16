@@ -3,6 +3,7 @@
 namespace App\Repositories\Interfaces;
 
 use App\Models\Customer;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface CustomerRepositoryInterface
 {
@@ -17,4 +18,6 @@ interface CustomerRepositoryInterface
     public function findByEmail(string $email): ?Customer;
 
     public function createB2B(array $data): Customer;
+
+    public function paginateAllWithBookings(int $perPage, string $sort, string $order): LengthAwarePaginator;
 }
