@@ -22,7 +22,7 @@ interface UserRepositoryInterface
 
     public function delete(User $user): void;
 
-    public function getByRoleWithStats(string $role, int $perPage, string $sort, string $order): LengthAwarePaginator;
+    public function getByRoleWithStats(?array $roles, int $perPage, string $sort, string $order, ?int $userId = null): LengthAwarePaginator;
 
-    public function getSummaryByRole(string $role): array;
+    public function getSummaryByRole(?array $roles, ?int $userId = null): array;
 }

@@ -83,19 +83,45 @@ class UserService
         $this->userRepository->delete($user);
     }
 
-    public function getStaffByRole(string $role, int $perPage, string $sort, string $order): array
+    public function getStaffByRole(?string $role, int $perPage, string $sort, string $order, User $actor): array
     {
         $allowed = [Role::OperationsManager->value, Role::Supervisor->value, Role::Technician->value];
-
-        if (! in_array($role, $allowed, true)) {
-            throw new BusinessRuleException('Invalid role. Allowed values: ops_manager, supervisor, technician.');
-        }
 
         $sort  = in_array($sort, ['name', 'created_at'], true) ? $sort : 'name';
         $order = in_array($order, ['asc', 'desc'], true) ? $order : 'asc';
 
-        $paginator = $this->userRepository->getByRoleWithStats($role, $perPage, $sort, $order);
-        $summary   = $this->userRepository->getSummaryByRole($role);
+        // Roles each actor may see a full list of, beyond their own record.
+        $subordinates = match ($actor->role) {
+            Role::Admin, Role::OperationsManager => $allowed,
+            Role::Supervisor => [Role::Technician->value],
+            default => [],
+        };
+
+        if (in_array($actor->role, [Role::Admin, Role::OperationsManager], true)) {
+            // ops_admin and ops_manager see everyone: a specific role if requested, otherwise all staff combined.
+            if ($role !== null) {
+                if (! in_array($role, $subordinates, true)) {
+                    throw new BusinessRuleException('Invalid role. Allowed values: ops_manager, supervisor, technician.');
+                }
+                $roles = [$role];
+            } else {
+                $roles = $subordinates;
+            }
+            $userId = null;
+        } elseif ($role === null || $role === $actor->role->value) {
+            // No filter, or filtering on their own role: staff only ever see their own record.
+            $roles  = null;
+            $userId = $actor->id;
+        } elseif (in_array($role, $subordinates, true)) {
+            // Filtering on a subordinate role: full list of that role.
+            $roles  = [$role];
+            $userId = null;
+        } else {
+            throw new BusinessRuleException('Invalid role.');
+        }
+
+        $paginator = $this->userRepository->getByRoleWithStats($roles, $perPage, $sort, $order, $userId);
+        $summary   = $this->userRepository->getSummaryByRole($roles, $userId);
 
         // Fetch active enquiry numbers for all users on this page in one query
         $userIds = collect($paginator->items())->pluck('id')->all();

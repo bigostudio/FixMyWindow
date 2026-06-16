@@ -47,10 +47,11 @@ class EloquentUserRepository implements UserRepositoryInterface
         $user->delete();
     }
 
-    public function getByRoleWithStats(string $role, int $perPage, string $sort, string $order): LengthAwarePaginator
+    public function getByRoleWithStats(?array $roles, int $perPage, string $sort, string $order, ?int $userId = null): LengthAwarePaginator
     {
-        return User::where('role', $role)
-            ->where('is_active', true)
+        return User::where('is_active', true)
+            ->when($roles !== null, fn ($q) => $q->whereIn('role', $roles))
+            ->when($userId !== null, fn ($q) => $q->where('id', $userId))
             ->addSelect([
                 'active_projects' => DB::table('project_assignments')
                     ->selectRaw('COUNT(DISTINCT project_assignments.enquiry_id)')
@@ -68,14 +69,18 @@ class EloquentUserRepository implements UserRepositoryInterface
             ->paginate($perPage);
     }
 
-    public function getSummaryByRole(string $role): array
+    public function getSummaryByRole(?array $roles, ?int $userId = null): array
     {
-        $total = User::where('role', $role)->where('is_active', true)->count();
+        $total = User::where('is_active', true)
+            ->when($roles !== null, fn ($q) => $q->whereIn('role', $roles))
+            ->when($userId !== null, fn ($q) => $q->where('id', $userId))
+            ->count();
 
         $stats = DB::table('project_assignments')
             ->join('enquiries', 'enquiries.id', '=', 'project_assignments.enquiry_id')
             ->join('users', 'users.id', '=', 'project_assignments.user_id')
-            ->where('users.role', $role)
+            ->when($roles !== null, fn ($q) => $q->whereIn('users.role', $roles))
+            ->when($userId !== null, fn ($q) => $q->where('users.id', $userId))
             ->where('users.is_active', true)
             ->whereNull('users.deleted_at')
             ->selectRaw("

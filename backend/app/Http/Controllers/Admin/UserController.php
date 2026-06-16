@@ -70,13 +70,13 @@ class UserController extends Controller
 
     public function byRole(Request $request): JsonResponse
     {
-        $role    = (string) $request->query('role', '');
+        $role    = trim((string) $request->query('role', '')) ?: null;
         $perPage = min((int) $request->query('limit', 20), 100);
         $sort    = (string) $request->query('sort', 'name');
         $order   = (string) $request->query('order', 'asc');
 
         ['paginator' => $paginator, 'summary' => $summary] = $this->userService->getStaffByRole(
-            $role, $perPage, $sort, $order
+            $role, $perPage, $sort, $order, auth()->user()
         );
 
         return response()->json([

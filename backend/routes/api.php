@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Admin\EnquiryNoteController as AdminEnquiryNoteController;
 use App\Http\Controllers\Customer\BlueprintController as CustomerBlueprintController;
-use App\Http\Controllers\Admin\MeasurementController as AdminMeasurementController;
+use App\Http\Controllers\Admin\ProjectStageController as AdminProjectStageController;
 use App\Http\Controllers\Admin\SurveyController as AdminSurveyController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
@@ -66,10 +66,14 @@ Route::prefix('v1')->group(function () {
             Route::middleware('role:ops_admin')->group(function () {
                 Route::get('users/staff',        [AdminUserController::class, 'staff']);
                 Route::get('users/pending',      [AdminUserController::class, 'pending']);
-                Route::get('users/by-role',      [AdminUserController::class, 'byRole']);
                 Route::post('users',             [AdminUserController::class, 'store']);
                 Route::put('users/{id}/approve', [AdminUserController::class, 'approve']);
                 Route::put('users/{id}/reject',  [AdminUserController::class, 'reject']);
+            });
+
+            // ─── Staff by role (ops_admin/ops_manager see everyone; supervisor sees technicians + self; technician sees only self) ───
+            Route::middleware('role:ops_admin,ops_manager,supervisor,technician')->group(function () {
+                Route::get('users/by-role', [AdminUserController::class, 'byRole']);
             });
 
             // ─── Enquiries — all internal roles ──────────────────────────
@@ -103,11 +107,12 @@ Route::prefix('v1')->group(function () {
                 Route::put('surveys/{id}/gonogo',        [AdminSurveyController::class, 'submitGoNoGo']);
             });
 
-            // ─── Measurements — all internal roles ───────────────────────
+            // ─── Project Stages (shared towers JSON across measurement / quality_check / installation) — all internal roles ───
             Route::middleware('role:ops_admin,ops_manager,supervisor,technician')->group(function () {
-                Route::post('measurements',       [AdminMeasurementController::class, 'store']);
-                Route::get('measurements/{id}',   [AdminMeasurementController::class, 'show']);
-                Route::put('measurements/{id}',   [AdminMeasurementController::class, 'update']);
+                Route::post('project-stages',         [AdminProjectStageController::class, 'store']);
+                Route::get('project-stages/{id}',     [AdminProjectStageController::class, 'show']);
+                Route::put('project-stages/{id}',     [AdminProjectStageController::class, 'update']);
+                Route::delete('project-stages/{id}',  [AdminProjectStageController::class, 'destroy']);
             });
         });
     });
