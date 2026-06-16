@@ -32,6 +32,8 @@ class InitiateEnquiryRequest extends FormRequest
             'billing.phone'            => ['required', 'string', 'digits_between:10,15'],
             'billing.email'            => ['nullable', 'email', 'max:190'],
             'billing.address'          => ['required', 'string', 'max:500'],
+
+            'blueprint_id'             => ['nullable', 'integer', 'exists:blueprints,id'],
         ];
     }
 }

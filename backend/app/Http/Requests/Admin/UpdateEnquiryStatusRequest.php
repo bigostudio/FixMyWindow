@@ -17,7 +17,10 @@ class UpdateEnquiryStatusRequest extends FormRequest
     {
         return [
             'status' => ['required', 'string', Rule::in(
-                array_column(ProjectStatus::cases(), 'value')
+                array_column(
+                    array_filter(ProjectStatus::cases(), fn($s) => $s !== ProjectStatus::Draft),
+                    'value'
+                )
             )],
         ];
     }

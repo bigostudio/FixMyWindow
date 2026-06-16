@@ -19,11 +19,7 @@ class BlueprintController extends Controller
 
     public function store(CreateBlueprintRequest $request, string $id): JsonResponse
     {
-        try {
-            $blueprint = $this->blueprintService->create((int) $id, $request->validated());
-        } catch (NotFoundHttpException $e) {
-            return response()->json(['message' => $e->getMessage()], 404);
-        }
+        $blueprint = $this->blueprintService->createForAdmin((int) $id, $request->validated());
 
         return response()->json([
             'data'    => new BlueprintResource($blueprint),
@@ -34,7 +30,7 @@ class BlueprintController extends Controller
     public function update(UpdateBlueprintRequest $request, string $id): JsonResponse
     {
         try {
-            $blueprint = $this->blueprintService->update((int) $id, $request->validated());
+            $blueprint = $this->blueprintService->updateById((int) $id, $request->validated());
         } catch (NotFoundHttpException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
@@ -72,7 +68,7 @@ class BlueprintController extends Controller
     public function destroy(string $id): JsonResponse
     {
         try {
-            $this->blueprintService->deleteForAdmin((int) $id);
+            $this->blueprintService->deleteById((int) $id);
         } catch (NotFoundHttpException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }

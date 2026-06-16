@@ -2,15 +2,13 @@
 
 namespace App\Http\Requests\Customer;
 
-use App\Models\Enquiry;
 use Illuminate\Foundation\Http\FormRequest;
 
 class GenerateBlueprintRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $enquiry = Enquiry::find($this->input('enquiry_id'));
-        return $enquiry && $enquiry->customer_id === auth('api')->id();
+        return true;
     }
 
     protected function prepareForValidation(): void
@@ -29,7 +27,6 @@ class GenerateBlueprintRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'enquiry_id'           => ['required', 'integer', 'exists:enquiries,id'],
             'society_name'         => ['nullable', 'string', 'max:190'],
             'tower_count'          => ['required', 'integer', 'min:0'],
             'floors_per_tower'     => ['required', 'integer', 'min:0'],

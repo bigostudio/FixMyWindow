@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\GenerateBlueprintRequest;
 use App\Http\Requests\Customer\UpdateBlueprintRequest;
 use App\Http\Resources\BlueprintResource;
-use App\Models\Enquiry;
 use App\Services\BlueprintService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -27,16 +26,23 @@ class BlueprintController extends Controller
         ]);
     }
 
+    public function store(GenerateBlueprintRequest $request): JsonResponse
+    {
+        $blueprint = $this->blueprintService->createForCustomer(
+            customerId: auth('api')->id(),
+            data:       $request->validated(),
+        );
+
+        return response()->json([
+            'data'    => new BlueprintResource($blueprint),
+            'message' => 'Blueprint created successfully.',
+        ], 201);
+    }
+
     public function show(string $id): JsonResponse
     {
-        $enquiry = Enquiry::find((int) $id);
-
-        if (! $enquiry || $enquiry->customer_id !== auth('api')->id()) {
-            return response()->json(['message' => 'Resource not found'], 404);
-        }
-
         try {
-            $blueprint = $this->blueprintService->getByEnquiryId((int) $id);
+            $blueprint = $this->blueprintService->getByIdForCustomer((int) $id, auth('api')->id());
         } catch (NotFoundHttpException $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
@@ -47,27 +53,17 @@ class BlueprintController extends Controller
         ]);
     }
 
-    public function generate(GenerateBlueprintRequest $request): JsonResponse
+    public function update(UpdateBlueprintRequest $request, string $id): JsonResponse
     {
-        $validated = $request->validated();
-        $blueprint = $this->blueprintService->generateForDraft(
-            customerId: auth('api')->id(),
-            data:       $validated,
-        );
-
-        return response()->json([
-            'data'    => new BlueprintResource($blueprint),
-            'message' => 'Blueprint created successfully.',
-        ], 201);
-    }
-
-    public function updateDraft(UpdateBlueprintRequest $request, string $id): JsonResponse
-    {
-        $blueprint = $this->blueprintService->updateForDraft(
-            enquiryId:  (int) $id,
-            customerId: auth('api')->id(),
-            data:       $request->validated(),
-        );
+        try {
+            $blueprint = $this->blueprintService->updateForCustomer(
+                blueprintId: (int) $id,
+                customerId:  auth('api')->id(),
+                data:        $request->validated(),
+            );
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
 
         return response()->json([
             'data'    => new BlueprintResource($blueprint),
@@ -75,4 +71,14 @@ class BlueprintController extends Controller
         ]);
     }
 
+    public function destroy(string $id): JsonResponse
+    {
+        try {
+            $this->blueprintService->deleteForCustomer((int) $id, auth('api')->id());
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+
+        return response()->json(['message' => 'Blueprint deleted successfully.']);
+    }
 }

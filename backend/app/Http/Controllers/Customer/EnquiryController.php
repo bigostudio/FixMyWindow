@@ -55,24 +55,13 @@ class EnquiryController extends Controller
         return response()->json(CustomerAddressResource::collection($addresses));
     }
 
-    public function initiate(InitiateEnquiryRequest $request): JsonResponse
+    public function create(InitiateEnquiryRequest $request): JsonResponse
     {
-        $enquiry = $this->enquiryService->initiate(
+        $enquiry = $this->enquiryService->create(
             customer: auth('api')->user(),
             data:     $request->validated(),
         );
 
         return response()->json((new EnquiryResource($enquiry))->resolve(), 201);
-    }
-
-    public function confirm(int $id): JsonResponse
-    {
-        try {
-            $enquiry = $this->enquiryService->confirm($id, auth('api')->user());
-        } catch (ModelNotFoundException) {
-            return response()->json(['message' => 'Resource not found'], 404);
-        }
-
-        return response()->json((new EnquiryResource($enquiry))->resolve());
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\BlueprintController as AdminBlueprintController;
 use App\Http\Controllers\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Customer\BlueprintController as CustomerBlueprintController;
+use App\Http\Controllers\Admin\MeasurementController as AdminMeasurementController;
 use App\Http\Controllers\Admin\SurveyController as AdminSurveyController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
@@ -32,19 +33,17 @@ Route::prefix('v1')->group(function () {
         Route::put('profile',      [CustomerProfileController::class, 'update']);
 
         // ─── Customer Enquiries ───────────────────────────────────────────
-        Route::post('enquiries/initiate',          [CustomerEnquiryController::class, 'initiate']);
-        Route::post('enquiries/{id}/confirm',      [CustomerEnquiryController::class, 'confirm']);
-        Route::get('enquiries',                    [CustomerEnquiryController::class, 'index']);
-        Route::get('enquiries/{id}',               [CustomerEnquiryController::class, 'show']);
-        Route::get('addresses',                    [CustomerEnquiryController::class, 'addresses']);
+        Route::post('enquiries',       [CustomerEnquiryController::class, 'create']);
+        Route::get('enquiries',        [CustomerEnquiryController::class, 'index']);
+        Route::get('enquiries/{id}',   [CustomerEnquiryController::class, 'show']);
+        Route::get('addresses',        [CustomerEnquiryController::class, 'addresses']);
 
-        // ─── Blueprint (optional for B2C, expected for B2B) ──────────────
-        Route::post('enquiries/blueprint/generate',   [CustomerBlueprintController::class, 'generate']);
-        Route::put('enquiries/blueprint/{id}',        [CustomerBlueprintController::class, 'updateDraft']);
-
-        // ─── Customer Blueprints ──────────────────────────────────────────
-        Route::get('blueprints',               [CustomerBlueprintController::class, 'index']);
-        Route::get('enquiries/{id}/blueprint', [CustomerBlueprintController::class, 'show']);
+        // ─── Blueprints (saved building templates, reusable across enquiries) ──
+        Route::get('blueprints',         [CustomerBlueprintController::class, 'index']);
+        Route::post('blueprints',        [CustomerBlueprintController::class, 'store']);
+        Route::get('blueprints/{id}',    [CustomerBlueprintController::class, 'show']);
+        Route::put('blueprints/{id}',    [CustomerBlueprintController::class, 'update']);
+        Route::delete('blueprints/{id}', [CustomerBlueprintController::class, 'destroy']);
     });
 
     // ─── Admin ────────────────────────────────────────────────────────────
@@ -78,11 +77,11 @@ Route::prefix('v1')->group(function () {
                 Route::get('enquiries/{id}',                       [AdminEnquiryController::class, 'show']);
                 Route::put('enquiries/{id}/status',                [AdminEnquiryController::class, 'updateStatus']);
                 Route::get('enquiries/{id}/team',                  [AdminEnquiryController::class, 'team']);
-                Route::post('enquiries/{id}/blueprint',             [AdminBlueprintController::class, 'store']);
-                Route::put('enquiries/{id}/blueprint',              [AdminBlueprintController::class, 'update']);
-                Route::get('enquiries/{id}/blueprint',              [AdminBlueprintController::class, 'showByEnquiry']);
-                Route::delete('enquiries/{id}/blueprint',           [AdminBlueprintController::class, 'destroy']);
+                Route::post('customers/{id}/blueprints',            [AdminBlueprintController::class, 'store']);
                 Route::get('customers/{id}/blueprints',             [AdminBlueprintController::class, 'byCustomer']);
+                Route::get('enquiries/{id}/blueprint',              [AdminBlueprintController::class, 'showByEnquiry']);
+                Route::put('blueprints/{id}',                       [AdminBlueprintController::class, 'update']);
+                Route::delete('blueprints/{id}',                    [AdminBlueprintController::class, 'destroy']);
             });
 
             // ─── Enquiry ops — ops_admin and ops_manager only ─────────────
@@ -98,6 +97,13 @@ Route::prefix('v1')->group(function () {
                 Route::get('surveys/{id}',               [AdminSurveyController::class, 'show']);
                 Route::put('surveys/{id}/checklist',     [AdminSurveyController::class, 'updateChecklist']);
                 Route::put('surveys/{id}/gonogo',        [AdminSurveyController::class, 'submitGoNoGo']);
+            });
+
+            // ─── Measurements — all internal roles ───────────────────────
+            Route::middleware('role:ops_admin,ops_manager,supervisor,technician')->group(function () {
+                Route::post('measurements',       [AdminMeasurementController::class, 'store']);
+                Route::get('measurements/{id}',   [AdminMeasurementController::class, 'show']);
+                Route::put('measurements/{id}',   [AdminMeasurementController::class, 'update']);
             });
         });
     });

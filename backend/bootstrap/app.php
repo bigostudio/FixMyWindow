@@ -6,6 +6,8 @@ use App\Exceptions\RateLimitException;
 use App\Http\Middleware\ForceJson;
 use App\Http\Middleware\ResponseEnvelope;
 use App\Http\Middleware\RoleGuard;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
+use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -26,6 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(ForceJson::class);
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
+        $middleware->append(TrimStrings::class);
+        $middleware->append(ConvertEmptyStringsToNull::class);
         $middleware->append(ResponseEnvelope::class);
         $middleware->alias(['role' => RoleGuard::class]);
     })

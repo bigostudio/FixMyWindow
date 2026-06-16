@@ -77,6 +77,48 @@ class BlueprintService
         return $this->blueprintRepo->update($blueprint, $data);
     }
 
+    public function createForCustomer(int $customerId, array $data): Blueprint
+    {
+        if (empty($data['towers'])) {
+            $data['towers'] = $this->buildTowersJson($data);
+        }
+
+        return $this->blueprintRepo->create(array_merge($data, ['customer_id' => $customerId]));
+    }
+
+    public function getByIdForCustomer(int $blueprintId, int $customerId): Blueprint
+    {
+        $blueprint = $this->blueprintRepo->findById($blueprintId);
+
+        if (! $blueprint || $blueprint->customer_id !== $customerId) {
+            throw new NotFoundHttpException('Blueprint not found.');
+        }
+
+        return $blueprint;
+    }
+
+    public function updateForCustomer(int $blueprintId, int $customerId, array $data): Blueprint
+    {
+        $blueprint = $this->blueprintRepo->findById($blueprintId);
+
+        if (! $blueprint || $blueprint->customer_id !== $customerId) {
+            throw new NotFoundHttpException('Blueprint not found.');
+        }
+
+        return $this->blueprintRepo->update($blueprint, $data);
+    }
+
+    public function deleteForCustomer(int $blueprintId, int $customerId): void
+    {
+        $blueprint = $this->blueprintRepo->findById($blueprintId);
+
+        if (! $blueprint || $blueprint->customer_id !== $customerId) {
+            throw new NotFoundHttpException('Blueprint not found.');
+        }
+
+        $this->blueprintRepo->delete($blueprint);
+    }
+
     public function generateForDraft(int $customerId, array $data): Blueprint
     {
         $enquiryId = $data['enquiry_id'];
@@ -192,18 +234,32 @@ class BlueprintService
         return $this->blueprintRepo->update($blueprint, $data);
     }
 
-    public function deleteForAdmin(int $enquiryId): void
+    public function createForAdmin(int $customerId, array $data): Blueprint
     {
-        $enquiry = $this->enquiryRepo->findById($enquiryId);
-
-        if (! $enquiry) {
-            throw new NotFoundHttpException('Enquiry not found.');
+        if (empty($data['towers'])) {
+            $data['towers'] = $this->buildTowersJson($data);
         }
 
-        $blueprint = $this->blueprintRepo->findByEnquiryId($enquiryId);
+        return $this->blueprintRepo->create(array_merge($data, ['customer_id' => $customerId]));
+    }
+
+    public function updateById(int $blueprintId, array $data): Blueprint
+    {
+        $blueprint = $this->blueprintRepo->findById($blueprintId);
 
         if (! $blueprint) {
-            throw new NotFoundHttpException('No blueprint found for this enquiry.');
+            throw new NotFoundHttpException('Blueprint not found.');
+        }
+
+        return $this->blueprintRepo->update($blueprint, $data);
+    }
+
+    public function deleteById(int $blueprintId): void
+    {
+        $blueprint = $this->blueprintRepo->findById($blueprintId);
+
+        if (! $blueprint) {
+            throw new NotFoundHttpException('Blueprint not found.');
         }
 
         $this->blueprintRepo->delete($blueprint);

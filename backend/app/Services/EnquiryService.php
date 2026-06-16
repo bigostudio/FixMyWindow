@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Customer;
 use App\Models\Enquiry;
+use App\Repositories\Interfaces\BlueprintRepositoryInterface;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
 use App\Repositories\Interfaces\ServiceRepositoryInterface;
@@ -27,54 +28,28 @@ class EnquiryService
         private readonly ServiceRepositoryInterface         $serviceRepository,
         private readonly EnquiryRepositoryInterface         $enquiryRepository,
         private readonly ProjectTimelineRepositoryInterface $timelineRepository,
+        private readonly BlueprintRepositoryInterface       $blueprintRepository,
     ) {}
 
     // ── Customer ──────────────────────────────────────────────────────────
 
-    public function initiate(Customer $customer, array $data): Enquiry
+    public function create(Customer $customer, array $data): Enquiry
     {
         $service = $this->serviceRepository->findActiveById($data['service_id']);
         if (! $service) {
             throw new BusinessRuleException('The selected service is not available.');
         }
 
-        return $this->enquiryRepository->create([
-            'customer_id'     => $customer->id,
-            'service_id'      => $service->id,
-            'type'            => $customer->type->value,
-            'city'            => $data['location']['city'],
-            'property_type'   => $data['property_type'],
-            'material_type'   => $service->material->value,
-            'inspection_type' => InspectionType::Expert->value,
-            'status'          => ProjectStatus::Draft->value,
-            'latitude'        => $data['location']['latitude'],
-            'longitude'       => $data['location']['longitude'],
-            'address'         => $data['location']['address'],
-            'inspection_fee'  => $customer->type === CustomerType::B2C ? 1000 : 0,
-            'payment_status'  => PaymentStatus::Pending->value,
-            'billing_name'    => $data['billing']['name'],
-            'billing_poc'     => $data['billing']['point_of_contact'] ?? null,
-            'billing_gst'     => $data['billing']['gst_number'] ?? null,
-            'billing_phone'   => $data['billing']['phone'],
-            'billing_email'   => $data['billing']['email'] ?? null,
-            'billing_address' => $data['billing']['address'],
-            'booking_date'    => today(),
-        ]);
-    }
+        $blueprintId = $data['blueprint_id'] ?? null;
 
-    public function confirm(int $enquiryId, Customer $customer): Enquiry
-    {
-        $enquiry = $this->enquiryRepository->findById($enquiryId);
-
-        if (! $enquiry || $enquiry->customer_id !== $customer->id) {
-            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        if ($blueprintId !== null) {
+            $blueprint = $this->blueprintRepository->findById($blueprintId);
+            if (! $blueprint || $blueprint->customer_id !== $customer->id) {
+                throw new BusinessRuleException('Blueprint not found.');
+            }
         }
 
-        if ($enquiry->status !== ProjectStatus::Draft) {
-            throw new BusinessRuleException('Only draft enquiries can be confirmed.');
-        }
-
-        return DB::transaction(function () use ($enquiry, $customer) {
+        return DB::transaction(function () use ($customer, $data, $service, $blueprintId) {
             $row = DB::table('enquiry_counter')
                 ->where('id', 1)
                 ->lockForUpdate()
@@ -87,15 +62,35 @@ class EnquiryService
 
             $enquiryNumber = sprintf('FMW-%s-%04d', now('UTC')->format('Ymd'), $counter);
 
-            $enquiry = $this->enquiryRepository->update($enquiry, [
-                'enquiry_number' => $enquiryNumber,
-                'status'         => ProjectStatus::New->value,
+            $enquiry = $this->enquiryRepository->create([
+                'enquiry_number'  => $enquiryNumber,
+                'customer_id'     => $customer->id,
+                'service_id'      => $service->id,
+                'type'            => $customer->type->value,
+                'city'            => $data['location']['city'],
+                'property_type'   => $data['property_type'],
+                'material_type'   => $service->material->value,
+                'inspection_type' => InspectionType::Expert->value,
+                'status'          => ProjectStatus::New->value,
+                'latitude'        => $data['location']['latitude'],
+                'longitude'       => $data['location']['longitude'],
+                'address'         => $data['location']['address'],
+                'inspection_fee'  => $customer->type === CustomerType::B2C ? 1000 : 0,
+                'payment_status'  => PaymentStatus::Pending->value,
+                'billing_name'    => $data['billing']['name'],
+                'billing_poc'     => $data['billing']['point_of_contact'] ?? null,
+                'billing_gst'     => $data['billing']['gst_number'] ?? null,
+                'billing_phone'   => $data['billing']['phone'],
+                'billing_email'   => $data['billing']['email'] ?? null,
+                'billing_address' => $data['billing']['address'],
+                'booking_date'    => today(),
+                'blueprint_id'    => $blueprintId,
             ]);
 
             $this->timelineRepository->log([
                 'enquiry_id'  => $enquiry->id,
                 'status'      => TimelineStatus::New->value,
-                'description' => 'Booking confirmed by customer.',
+                'description' => 'Booking created by customer.',
                 'actor_type'  => TimelineActorType::Customer->value,
                 'actor_id'    => $customer->id,
                 'actor_name'  => $customer->name ?? 'Customer',

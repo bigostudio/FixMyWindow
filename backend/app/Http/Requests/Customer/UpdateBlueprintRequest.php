@@ -2,15 +2,15 @@
 
 namespace App\Http\Requests\Customer;
 
-use App\Models\Enquiry;
+use App\Models\Blueprint;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateBlueprintRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $enquiry = Enquiry::find($this->route('id'));
-        return $enquiry && $enquiry->customer_id === auth('api')->id();
+        $blueprint = Blueprint::find($this->route('id'));
+        return $blueprint && $blueprint->customer_id === auth('api')->id();
     }
 
     protected function prepareForValidation(): void
