@@ -13,6 +13,7 @@ class OtpRequest extends Model
 
     protected $fillable = [
         'phone',
+        'req_id',
         'otp_hash',
         'expires_at',
         'consumed_at',

@@ -103,4 +103,9 @@ class Enquiry extends Model
     {
         return $this->hasOne(Survey::class);
     }
+
+    public function projectStage(): HasOne
+    {
+        return $this->hasOne(ProjectStage::class);
+    }
 }

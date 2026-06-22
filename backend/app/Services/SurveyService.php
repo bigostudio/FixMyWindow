@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Enquiry;
 use App\Models\User;
+use App\Repositories\Interfaces\BlueprintRepositoryInterface;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
+use App\Repositories\Interfaces\ProjectStageRepositoryInterface;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
 use App\Repositories\Interfaces\SurveyRepositoryInterface;
 use App\Support\Enums\ProjectStatus;
@@ -22,6 +24,8 @@ class SurveyService
         private readonly SurveyRepositoryInterface          $surveyRepo,
         private readonly EnquiryRepositoryInterface         $enquiryRepo,
         private readonly ProjectTimelineRepositoryInterface $timelineRepo,
+        private readonly BlueprintRepositoryInterface       $blueprintRepo,
+        private readonly ProjectStageRepositoryInterface    $projectStageRepo,
     ) {}
 
     public function create(array $data, User $actor): \App\Models\Survey
@@ -108,6 +112,15 @@ class SurveyService
                     'actor_id'    => null,
                     'actor_name'  => 'System',
                 ]);
+
+                $blueprint = $this->blueprintRepo->findByEnquiryId($survey->enquiry_id);
+
+                if ($blueprint) {
+                    $this->projectStageRepo->create([
+                        'enquiry_id' => $survey->enquiry_id,
+                        'towers'     => $blueprint->towers,
+                    ]);
+                }
 
             } elseif ($outcomeEnum === SurveyOutcome::NoGo) {
                 $enquiry->update(['status' => ProjectStatus::Cancelled->value]);

@@ -16,6 +16,8 @@ enum ProjectStatus: string
     case QuotationApproved     = 'quotation_approved';
     case InstallationInitiated = 'installation_initiated';
     case InstallationCompleted = 'installation_completed';
+    case QualityCheckInitiated = 'quality_check_initiated';
+    case QualityCheckCompleted = 'quality_check_completed';
     case Handovered            = 'handovered';
     case OnHold                = 'on_hold';
     case Cancelled             = 'cancelled';

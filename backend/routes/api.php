@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
+use App\Http\Controllers\Customer\Msg91AuthController as CustomerMsg91AuthController;
 use App\Http\Controllers\Customer\ContactController as CustomerContactController;
 use App\Http\Controllers\Customer\EnquiryController as CustomerEnquiryController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Admin\EnquiryNoteController as AdminEnquiryNoteControll
 use App\Http\Controllers\Customer\BlueprintController as CustomerBlueprintController;
 use App\Http\Controllers\Admin\ProjectStageController as AdminProjectStageController;
 use App\Http\Controllers\Admin\SurveyController as AdminSurveyController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +21,11 @@ Route::prefix('v1')->group(function () {
 
     // ─── Contact ──────────────────────────────────────────────────────────
     Route::post('contact', [CustomerContactController::class, 'store']);
+
+    // ─── Customer Auth (MSG91 widget OTP) ────────────────────────────────
+    Route::post('auth/msg91/send-otp',   [CustomerMsg91AuthController::class, 'sendOtp']);
+    Route::post('auth/msg91/retry-otp',  [CustomerMsg91AuthController::class, 'retryOtp']);
+    Route::post('auth/msg91/verify-otp', [CustomerMsg91AuthController::class, 'verifyOtp']);
 
     // ─── Customer Auth ────────────────────────────────────────────────────
     Route::post('auth/send-otp',      [CustomerAuthController::class, 'sendOtp']);
@@ -58,6 +65,8 @@ Route::prefix('v1')->group(function () {
         Route::get('auth/email/verify/{token}', [AdminAuthController::class, 'verifyEmail']);
 
         Route::middleware('auth:admin')->group(function () {
+            Route::get('dashboard', [AdminDashboardController::class, 'index']);
+
             Route::post('auth/logout',          [AdminAuthController::class, 'logout']);
             Route::post('auth/change-password', [AdminAuthController::class, 'changePassword']);
             Route::post('auth/email/resend',    [AdminAuthController::class, 'resendVerification']);
@@ -86,6 +95,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('enquiries/{id}/team',                  [AdminEnquiryController::class, 'team']);
                 Route::get('enquiries/{id}/notes',                 [AdminEnquiryNoteController::class, 'index']);
                 Route::post('enquiry-notes',                       [AdminEnquiryNoteController::class, 'store']);
+                Route::put('enquiries/{id}/blueprint',             [AdminEnquiryController::class, 'linkBlueprint']);
                 Route::post('customers/{id}/blueprints',            [AdminBlueprintController::class, 'store']);
                 Route::get('customers/{id}/blueprints',             [AdminBlueprintController::class, 'byCustomer']);
                 Route::get('enquiries/{id}/blueprint',              [AdminBlueprintController::class, 'showByEnquiry']);

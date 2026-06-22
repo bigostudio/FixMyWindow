@@ -8,5 +8,6 @@ enum AssignmentSection: string
     case Supervisor   = 'supervisor';
     case Survey       = 'survey';
     case Measurement  = 'measurement';
+    case QualityCheck = 'quality_check';
     case Installation = 'installation';
 }

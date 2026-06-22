@@ -15,6 +15,8 @@ enum TimelineStatus: string
     case WorkOrderCreated     = 'Work Order Created';
     case TeamAssigned         = 'Team Assigned';
     case WorkInProgress       = 'Work In Progress';
+    case QualityCheckInitiated = 'Quality Check Initiated';
+    case QualityCheckCompleted = 'Quality Check Completed';
     case OnTrack              = 'On Track';
     case OnHold               = 'On Hold';
     case AtRisk               = 'At Risk';

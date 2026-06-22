@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AssignProjectStaffRequest;
+use App\Http\Requests\Admin\LinkEnquiryBlueprintRequest;
 use App\Http\Requests\Admin\UpdateEnquiryStatusRequest;
 use App\Http\Resources\AdminBookingResource;
 use App\Http\Resources\AdminEnquiryDetailResource;
@@ -90,6 +91,22 @@ class EnquiryController extends Controller
         return response()->json([
             'data'    => $team,
             'message' => 'OK',
+        ]);
+    }
+
+    public function linkBlueprint(LinkEnquiryBlueprintRequest $request, string $id): JsonResponse
+    {
+        try {
+            $enquiry = $this->enquiryService->linkBlueprint((int) $id, $request->validated()['blueprint_id']);
+        } catch (ModelNotFoundException) {
+            return response()->json(['message' => 'Resource not found'], 404);
+        } catch (\Symfony\Component\HttpKernel\Exception\ConflictHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], 409);
+        }
+
+        return response()->json([
+            'data'    => ['blueprint_id' => $enquiry->blueprint_id],
+            'message' => 'Blueprint linked successfully.',
         ]);
     }
 }

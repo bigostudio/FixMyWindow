@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Repositories\Eloquent\EloquentDashboardRepository;
 use App\Repositories\Eloquent\EloquentBlueprintRepository;
 use App\Repositories\Eloquent\EloquentCustomerRepository;
 use App\Repositories\Eloquent\EloquentProjectStageRepository;
@@ -15,6 +16,7 @@ use App\Repositories\Eloquent\EloquentProjectTimelineRepository;
 use App\Repositories\Eloquent\EloquentRefreshTokenRepository;
 use App\Repositories\Eloquent\EloquentServiceRepository;
 use App\Repositories\Eloquent\EloquentUserRepository;
+use App\Repositories\Interfaces\DashboardRepositoryInterface;
 use App\Repositories\Interfaces\BlueprintRepositoryInterface;
 use App\Repositories\Interfaces\CustomerRepositoryInterface;
 use App\Repositories\Interfaces\ProjectStageRepositoryInterface;
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(DashboardRepositoryInterface::class, EloquentDashboardRepository::class);
         $this->app->bind(BlueprintRepositoryInterface::class, EloquentBlueprintRepository::class);
         $this->app->bind(ProjectStageRepositoryInterface::class, EloquentProjectStageRepository::class);
         $this->app->bind(CustomerRepositoryInterface::class, EloquentCustomerRepository::class);

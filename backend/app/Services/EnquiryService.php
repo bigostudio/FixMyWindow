@@ -181,6 +181,25 @@ class EnquiryService
         });
     }
 
+    // ── Admin — link blueprint ────────────────────────────────────────────
+
+    public function linkBlueprint(int $enquiryId, int $blueprintId): Enquiry
+    {
+        $enquiry = $this->enquiryRepository->findById($enquiryId);
+
+        if (! $enquiry) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        }
+
+        if ($enquiry->blueprint_id !== null) {
+            throw new \Symfony\Component\HttpKernel\Exception\ConflictHttpException(
+                'A blueprint is already linked to this enquiry.'
+            );
+        }
+
+        return $this->enquiryRepository->update($enquiry, ['blueprint_id' => $blueprintId]);
+    }
+
     // ── Admin — statuses lookup ───────────────────────────────────────────
 
     public function getStatuses(): Collection
@@ -200,6 +219,8 @@ class EnquiryService
             ProjectStatus::SurveyCompleted       => TimelineStatus::SurveyPassed,
             ProjectStatus::InstallationInitiated => TimelineStatus::WorkInProgress,
             ProjectStatus::InstallationCompleted => TimelineStatus::WorkInProgress,
+            ProjectStatus::QualityCheckInitiated => TimelineStatus::QualityCheckInitiated,
+            ProjectStatus::QualityCheckCompleted => TimelineStatus::QualityCheckCompleted,
             ProjectStatus::Handovered            => TimelineStatus::Completed,
             ProjectStatus::Cancelled             => TimelineStatus::Cancelled,
             default                              => TimelineStatus::New,

@@ -19,9 +19,11 @@ class ProjectStatusSeeder extends Seeder
             ['code' => 'quotation_approved',       'label' => 'Quotation Approved',      'sort_order' => 6],
             ['code' => 'installation_initiated',   'label' => 'Installation Initiated',  'sort_order' => 7],
             ['code' => 'installation_completed',   'label' => 'Installation Completed',  'sort_order' => 8],
-            ['code' => 'handovered',               'label' => 'Handovered',              'sort_order' => 9],
-            ['code' => 'on_hold',                  'label' => 'On Hold',                 'sort_order' => 10],
-            ['code' => 'cancelled',                'label' => 'Cancelled',               'sort_order' => 11],
+            ['code' => 'quality_check_initiated',  'label' => 'Quality Check Initiated', 'sort_order' => 9],
+            ['code' => 'quality_check_completed',  'label' => 'Quality Check Completed', 'sort_order' => 10],
+            ['code' => 'handovered',               'label' => 'Handovered',              'sort_order' => 11],
+            ['code' => 'on_hold',                  'label' => 'On Hold',                 'sort_order' => 12],
+            ['code' => 'cancelled',                'label' => 'Cancelled',               'sort_order' => 13],
         ];
 
         foreach ($statuses as $status) {

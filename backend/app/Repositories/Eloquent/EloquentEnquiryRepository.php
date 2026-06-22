@@ -28,6 +28,7 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
             'assignments.user',
             'timeline',
             'survey',
+            'projectStage',
         ])->find($id);
     }
 
