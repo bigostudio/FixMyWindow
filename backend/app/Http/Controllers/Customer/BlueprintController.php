@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\GenerateBlueprintRequest;
 use App\Http\Requests\Customer\UpdateBlueprintRequest;
+use App\Http\Requests\Customer\UploadBlueprintPhotoRequest;
+use App\Http\Resources\BlueprintPhotoResource;
 use App\Http\Resources\BlueprintResource;
 use App\Services\BlueprintService;
 use Illuminate\Http\JsonResponse;
@@ -80,5 +82,46 @@ class BlueprintController extends Controller
         }
 
         return response()->json(['message' => 'Blueprint deleted successfully.']);
+    }
+
+    public function storePhoto(UploadBlueprintPhotoRequest $request, string $enquiryId): JsonResponse
+    {
+        $photos = $this->blueprintService->uploadPhotos(
+            enquiryId:       (int) $enquiryId,
+            files:           $request->file('photos'),
+            uploaderType:    'customer',
+            uploaderId:      auth('api')->id(),
+            customerOwnerId: auth('api')->id(),
+        );
+
+        return response()->json([
+            'data'    => BlueprintPhotoResource::collection($photos),
+            'message' => 'Photos uploaded successfully.',
+        ], 201);
+    }
+
+    public function indexPhoto(string $enquiryId): JsonResponse
+    {
+        try {
+            $photos = $this->blueprintService->getPhotos((int) $enquiryId, auth('api')->id());
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+
+        return response()->json([
+            'data'    => BlueprintPhotoResource::collection($photos),
+            'message' => 'OK',
+        ]);
+    }
+
+    public function destroyPhoto(string $enquiryId, string $photoId): JsonResponse
+    {
+        try {
+            $this->blueprintService->deletePhoto((int) $enquiryId, (int) $photoId, auth('api')->id());
+        } catch (NotFoundHttpException $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
+
+        return response()->json(['message' => 'Photo deleted successfully.']);
     }
 }

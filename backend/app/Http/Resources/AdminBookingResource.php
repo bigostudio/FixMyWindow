@@ -21,6 +21,7 @@ class AdminBookingResource extends JsonResource
             'booking_id'       => $this->enquiry_number,
             'customer_name'    => $this->customer?->name,
             'service_type'     => $this->service?->name,
+            'property_type'    => $this->property_type->value,
             'status'           => $this->status->value,
             'status_label'     => $this->status->label(),
             'progress_percent' => $this->progress_percent,

@@ -17,7 +17,7 @@ class UpdateSurveyChecklistRequest extends FormRequest
             // Go/No-Go matrix — 10 items
             'gonogo_matrix'               => ['nullable', 'array'],
             'gonogo_matrix.*.item_key'    => ['required_with:gonogo_matrix', 'string', 'max:100'],
-            'gonogo_matrix.*.category'    => ['required_with:gonogo_matrix', 'string', 'in:commercial,technical,operational,strategic,risk'],
+            'gonogo_matrix.*.category'    => ['required_with:gonogo_matrix', 'string', 'max:100'],
             'gonogo_matrix.*.result'      => ['required_with:gonogo_matrix', 'string', 'in:yes,no,n_a,n_r'],
             'gonogo_matrix.*.remarks'     => ['nullable', 'string', 'max:500'],
 

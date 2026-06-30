@@ -48,11 +48,14 @@ Route::prefix('v1')->group(function () {
         Route::get('addresses',        [CustomerEnquiryController::class, 'addresses']);
 
         // ─── Blueprints (saved building templates, reusable across enquiries) ──
-        Route::get('blueprints',         [CustomerBlueprintController::class, 'index']);
-        Route::post('blueprints',        [CustomerBlueprintController::class, 'store']);
-        Route::get('blueprints/{id}',    [CustomerBlueprintController::class, 'show']);
-        Route::put('blueprints/{id}',    [CustomerBlueprintController::class, 'update']);
-        Route::delete('blueprints/{id}', [CustomerBlueprintController::class, 'destroy']);
+        Route::get('blueprints',                                   [CustomerBlueprintController::class, 'index']);
+        Route::post('blueprints',                                  [CustomerBlueprintController::class, 'store']);
+        Route::get('blueprints/{id}',                              [CustomerBlueprintController::class, 'show']);
+        Route::put('blueprints/{id}',                              [CustomerBlueprintController::class, 'update']);
+        Route::delete('blueprints/{id}',                           [CustomerBlueprintController::class, 'destroy']);
+        Route::post('enquiries/{id}/blueprint/photos',              [CustomerBlueprintController::class, 'storePhoto']);
+        Route::get('enquiries/{id}/blueprint/photos',              [CustomerBlueprintController::class, 'indexPhoto']);
+        Route::delete('enquiries/{id}/blueprint/photos/{photoId}', [CustomerBlueprintController::class, 'destroyPhoto']);
     });
 
     // ─── Admin ────────────────────────────────────────────────────────────
@@ -101,6 +104,9 @@ Route::prefix('v1')->group(function () {
                 Route::get('enquiries/{id}/blueprint',              [AdminBlueprintController::class, 'showByEnquiry']);
                 Route::put('blueprints/{id}',                       [AdminBlueprintController::class, 'update']);
                 Route::delete('blueprints/{id}',                    [AdminBlueprintController::class, 'destroy']);
+                Route::post('enquiries/{id}/blueprint/photos',              [AdminBlueprintController::class, 'storePhoto']);
+                Route::get('enquiries/{id}/blueprint/photos',               [AdminBlueprintController::class, 'indexPhoto']);
+                Route::delete('enquiries/{id}/blueprint/photos/{photoId}',  [AdminBlueprintController::class, 'destroyPhoto']);
             });
 
             // ─── Enquiry ops — ops_admin and ops_manager only ─────────────
@@ -113,8 +119,12 @@ Route::prefix('v1')->group(function () {
                 Route::post('surveys',                   [AdminSurveyController::class, 'store']);
                 Route::get('surveys',                    [AdminSurveyController::class, 'index']);
                 Route::get('surveys/{id}',               [AdminSurveyController::class, 'show']);
-                Route::put('surveys/{id}/checklist',     [AdminSurveyController::class, 'updateChecklist']);
                 Route::put('surveys/{id}/gonogo',        [AdminSurveyController::class, 'submitGoNoGo']);
+            });
+
+            // ─── Survey checklist — surveyor (supervisor) also allowed ────
+            Route::middleware('role:ops_admin,ops_manager,supervisor')->group(function () {
+                Route::put('surveys/{id}/checklist',     [AdminSurveyController::class, 'updateChecklist']);
             });
 
             // ─── Project Stages (shared towers JSON across measurement / quality_check / installation) — all internal roles ───
