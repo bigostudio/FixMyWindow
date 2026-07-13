@@ -50,7 +50,7 @@ return [
         'cloud' => [
             'driver' => 'local',
             'root' => public_path('uploads'),
-            'url' => env('APP_URL').'/uploads',
+            'url' => env('CLOUD_DISK_URL', env('APP_URL').'/api/uploads'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

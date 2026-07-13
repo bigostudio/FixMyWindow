@@ -115,12 +115,10 @@ class SurveyService
 
                 $blueprint = $this->blueprintRepo->findByEnquiryId($survey->enquiry_id);
 
-                if ($blueprint) {
-                    $this->projectStageRepo->create([
-                        'enquiry_id' => $survey->enquiry_id,
-                        'towers'     => $blueprint->towers,
-                    ]);
-                }
+                $this->projectStageRepo->create([
+                    'enquiry_id' => $survey->enquiry_id,
+                    'towers'     => $blueprint?->towers,
+                ]);
 
             } elseif ($outcomeEnum === SurveyOutcome::NoGo) {
                 $enquiry->update(['status' => ProjectStatus::Cancelled->value]);

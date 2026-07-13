@@ -16,6 +16,18 @@ use App\Http\Controllers\Admin\SurveyController as AdminSurveyController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+
+// Hosting routes every request under /api into this app's index.php (there is
+// no static-file passthrough at the webserver level), so uploaded files must
+// be served through Laravel rather than relying on Apache to hand them off.
+Route::get('uploads/{path}', function (string $path) {
+    if (! Storage::disk('cloud')->exists($path)) {
+        abort(404);
+    }
+
+    return Storage::disk('cloud')->response($path);
+})->where('path', '.*');
 
 Route::prefix('v1')->group(function () {
 
@@ -112,6 +124,7 @@ Route::prefix('v1')->group(function () {
             // ─── Enquiry ops — ops_admin and ops_manager only ─────────────
             Route::middleware('role:ops_admin,ops_manager')->group(function () {
                 Route::put('enquiries/{id}/assign',                [AdminEnquiryController::class, 'assignStaff']);
+                Route::delete('enquiries/{id}',                    [AdminEnquiryController::class, 'destroy']);
             });
 
             // ─── Surveys — ops_admin and ops_manager only ─────────────────

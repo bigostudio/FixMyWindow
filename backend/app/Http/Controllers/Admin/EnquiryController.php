@@ -109,4 +109,15 @@ class EnquiryController extends Controller
             'message' => 'Blueprint linked successfully.',
         ]);
     }
+
+    public function destroy(string $id): JsonResponse
+    {
+        try {
+            $this->enquiryService->delete((int) $id);
+        } catch (ModelNotFoundException) {
+            return response()->json(['message' => 'Resource not found'], 404);
+        }
+
+        return response()->json(['message' => 'Enquiry deleted successfully.']);
+    }
 }

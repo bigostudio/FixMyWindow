@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Customer;
 use App\Models\Enquiry;
+use App\Repositories\Interfaces\BlueprintPhotoRepositoryInterface;
 use App\Repositories\Interfaces\BlueprintRepositoryInterface;
 use App\Repositories\Interfaces\EnquiryRepositoryInterface;
 use App\Repositories\Interfaces\ProjectTimelineRepositoryInterface;
@@ -20,6 +21,7 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class EnquiryService
@@ -29,6 +31,7 @@ class EnquiryService
         private readonly EnquiryRepositoryInterface         $enquiryRepository,
         private readonly ProjectTimelineRepositoryInterface $timelineRepository,
         private readonly BlueprintRepositoryInterface       $blueprintRepository,
+        private readonly BlueprintPhotoRepositoryInterface  $blueprintPhotoRepository,
     ) {}
 
     // ── Customer ──────────────────────────────────────────────────────────
@@ -198,6 +201,31 @@ class EnquiryService
         }
 
         return $this->enquiryRepository->update($enquiry, ['blueprint_id' => $blueprintId]);
+    }
+
+    // ── Admin — delete ────────────────────────────────────────────────────
+
+    public function delete(int $enquiryId): void
+    {
+        $enquiry = $this->enquiryRepository->findById($enquiryId);
+
+        if (! $enquiry) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
+        }
+
+        // blueprint_photos rows cascade-delete at the DB level, but the physical
+        // files on the cloud disk don't — remove those first.
+        foreach ($this->blueprintPhotoRepository->findByEnquiryId($enquiry->id) as $photo) {
+            Storage::disk('cloud')->delete($photo->file_path);
+        }
+
+        if ($enquiry->receipt_url) {
+            Storage::disk('cloud')->delete($enquiry->receipt_url);
+        }
+
+        // The linked blueprint is a reusable customer template (possibly shared
+        // with other enquiries), so it is intentionally left untouched here.
+        $this->enquiryRepository->delete($enquiry);
     }
 
     // ── Admin — statuses lookup ───────────────────────────────────────────

@@ -71,6 +71,15 @@ class EloquentEnquiryRepository implements EnquiryRepositoryInterface
         return $enquiry->fresh();
     }
 
+    // Plain DELETE lets MySQL's ON DELETE CASCADE fan out to project_assignments,
+    // project_timeline, surveys, project_stages, enquiry_notes and blueprint_photos
+    // at the engine level — this bypasses ProjectTimeline's append-only model guard,
+    // which only fires on Eloquent-level updates/deletes of that model.
+    public function delete(Enquiry $enquiry): void
+    {
+        $enquiry->delete();
+    }
+
     public function getDistinctAddressesByCustomer(int $customerId): \Illuminate\Support\Collection
     {
         return Enquiry::where('customer_id', $customerId)

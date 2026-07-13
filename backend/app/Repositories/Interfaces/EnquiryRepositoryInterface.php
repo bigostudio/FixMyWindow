@@ -23,5 +23,7 @@ interface EnquiryRepositoryInterface
 
     public function update(Enquiry $enquiry, array $data): Enquiry;
 
+    public function delete(Enquiry $enquiry): void;
+
     public function getDistinctAddressesByCustomer(int $customerId): \Illuminate\Support\Collection;
 }
