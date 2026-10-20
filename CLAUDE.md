@@ -222,7 +222,7 @@ app/
 │   ├─ Controllers/
 │   │   ├─ Customer/   (AuthController, EnquiryController, BlueprintController, ProfileController)
 │   │   └─ Admin/      (AuthController, UserController, ServiceController, EnquiryController,
-│   │                   SurveyController, MeasurementController, ProjectController,
+│   │                   SurveyController, ProjectStageController, ProjectController,
 │   │                   SnagController, HandoverController, NotificationController,
 │   │                   SettingsController, ReportController)
 │   ├─ Requests/       (one FormRequest per write operation — e.g. SendOtpRequest)
@@ -757,16 +757,23 @@ PUT    /api/v1/admin/surveys/{id}/gonogo
 POST   /api/v1/admin/surveys/{id}/photos
 ```
 
-### Measurement
+### Project Stage (Measurement / Quality Check / Installation)
+
+One shared model/table/API for all three stages. Each record is scoped to an `enquiry_id` and a
+`type` (`measurement` | `quality_check` | `installation`, backed enum `App\Support\Enums\ProjectStageType`).
+`type` is set once on create and never changes on update. The `towers` JSON column holds the same
+tower→floor→flat→aperture shape regardless of which `type` the record is.
+
 ```
-POST   /api/v1/admin/measurements
-GET    /api/v1/admin/measurements/{id}
-PUT    /api/v1/admin/measurements/{id}
-POST   /api/v1/admin/measurements/{id}/photos
-PUT    /api/v1/admin/measurements/{id}/approve
-POST   /api/v1/admin/measurements/{id}/release
-GET    /api/v1/admin/measurements/{id}/certificate
-GET    /api/v1/admin/projects/{id}/measurements
+POST   /api/v1/admin/project-stages              (body: enquiry_id, type, towers)
+GET    /api/v1/admin/project-stages/{id}
+PUT    /api/v1/admin/project-stages/{id}          (body: towers)
+DELETE /api/v1/admin/project-stages/{id}
+POST   /api/v1/admin/project-stages/{id}/photos          (not yet implemented)
+PUT    /api/v1/admin/project-stages/{id}/approve          (not yet implemented)
+POST   /api/v1/admin/project-stages/{id}/release          (not yet implemented)
+GET    /api/v1/admin/project-stages/{id}/certificate          (not yet implemented)
+GET    /api/v1/admin/projects/{id}/project-stages          (not yet implemented)
 ```
 
 ### Projects / Execution Tracker
@@ -891,7 +898,33 @@ These are the most common mistakes. Claude Code must never do these.
 
 ---
 
-## 16. Session Checklist
+## 16. Deployment Summary (required at end of every session)
+
+After implementing any API or change, always end with a deployment summary. The user deploys by **replacing entire folders** on the server — never individual files. Format it exactly like this:
+
+```
+**Folders to upload:**
+- app/
+- routes/
+- database/
+
+**Run on server:**
+php artisan migrate
+
+**Clear caches:**
+php artisan route:clear
+php artisan config:clear
+```
+
+Rules:
+- List only top-level backend folders that contain changed files (`app/`, `routes/`, `database/`, `config/`, etc.)
+- Always include `php artisan migrate` if any migration was added
+- Always include `route:clear` and `config:clear`
+- Never list individual files — only folders
+
+---
+
+## 17. Session Checklist
 
 Before ending any Claude Code session, verify:
 

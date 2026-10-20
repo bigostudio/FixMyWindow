@@ -1,0 +1,3634 @@
+{
+  "info": {
+    "name": "FixMyWindow API",
+    "description": "FixMyWindow (FMW) \u2014 REST API Collection\n\n**Base URL:** {{base_url}} (set by active environment)\n\n**Environments:**\n- FixMyWindow \u2014 Dev \u2192 https://dev.fixmywindow.co/api/v1\n- FixMyWindow \u2014 Production \u2192 https://fixmywindow.co/api/v1\n\nAll requests require:\n- Content-Type: application/json\n- Accept: application/json\n\nAuthenticated requests require:\n- Authorization: Bearer {{access_token}}",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://fixmywindow.co/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "enquiry_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "blueprint_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "survey_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "blueprint_photo_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "project_stage_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Contact Us",
+      "description": "Public contact form submission.",
+      "item": [
+        {
+          "name": "Submit Contact Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ravi Kumar\",\n  \"email\": \"ravi@example.com\",\n  \"phone\": \"9876543210\",\n  \"message\": \"I would like to get a quote for window installation in my apartment.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/contact",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "contact"
+              ]
+            },
+            "description": "Submit a contact us enquiry. Public endpoint \u2014 no authentication required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "description": "Serves files stored on the cloud disk (public/uploads). Every request under /api is routed into this app; there is no static-file passthrough at the webserver level, so uploaded files (blueprint photos, survey photos, snag photos, handover PDFs, etc.) are streamed back through this route rather than served directly by Apache.",
+      "item": [
+        {
+          "name": "Get Uploaded File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base_url}}/uploads/blueprints/{{enquiry_id}}/photos/example.jpg",
+              "host": [
+                "{{api_base_url}}"
+              ],
+              "path": [
+                "uploads",
+                "blueprints",
+                "{{enquiry_id}}",
+                "photos",
+                "example.jpg"
+              ]
+            },
+            "description": "Fetches a stored file by its path. Replace the path segments with the actual file_path/url returned by the relevant resource (e.g. a blueprint photo's url field). No authentication required \u2014 matches prior public static-file behaviour."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Auth",
+      "description": "OTP-based B2C auth and B2B email/password auth.",
+      "item": [
+        {
+          "name": "Send OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/send-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "send-otp"
+              ]
+            },
+            "description": "Send OTP to a registered B2C customer phone number.\n\n**Dummy OTP (non-production):** `123456`"
+          }
+        },
+        {
+          "name": "Send OTP (MSG91)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/msg91/send-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "msg91",
+                "send-otp"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retry OTP (MSG91)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"retryChannel\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/msg91/retry-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "msg91",
+                "retry-otp"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP (MSG91)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/msg91/verify-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "msg91",
+                "verify-otp"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Register (B2C)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has customer\", () => pm.expect(json.data.customer).to.be.an('object'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"name\": \"Ram Kumar\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register a new B2C customer. After registration, call `send-otp` then `verify-otp` to receive tokens."
+          }
+        },
+        {
+          "name": "Verify OTP (Login)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has access_token\", () => pm.expect(json.data && json.data.access_token).to.be.a('string'));",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.environment.set('access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data && json.data.refresh_token) {",
+                  "  pm.environment.set('refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/verify-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "verify-otp"
+              ]
+            },
+            "description": "Login an existing B2C customer using OTP. Auto-saves `access_token` and `refresh_token`.\n\n**Dummy OTP (non-production):** `123456`"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.environment.set('access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data && json.data.refresh_token) {",
+                  "  pm.environment.set('refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "description": "Exchange refresh token for a new access token."
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.environment.set('access_token', '');",
+                  "pm.environment.set('refresh_token', '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout customer. Revokes the refresh token and invalidates the JWT."
+          }
+        },
+        {
+          "name": "B2B Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has customer\", () => pm.expect(json.data.customer).to.be.an('object'));",
+                  "pm.test(\"Type is b2b\", () => pm.expect(json.data.customer.type).to.eql('b2b'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Raj Kumar\",\n  \"organisation_name\": \"Acme Corp Pvt Ltd\",\n  \"phone\": \"9123456789\",\n  \"email\": \"acme@company.in\",\n  \"password\": \"Secret@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/b2b/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "b2b",
+                "register"
+              ]
+            },
+            "description": "Register a new B2B customer with email + password. A verification email is sent. Call B2B Login after verifying email."
+          }
+        },
+        {
+          "name": "B2B Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has access_token\", () => pm.expect(json.data && json.data.access_token).to.be.a('string'));",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.environment.set('access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data && json.data.refresh_token) {",
+                  "  pm.environment.set('refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"acme@company.in\",\n  \"password\": \"Secret@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/b2b/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "b2b",
+                "login"
+              ]
+            },
+            "description": "Login as a B2B customer using email + password. Auto-saves `access_token` and `refresh_token`."
+          }
+        },
+        {
+          "name": "Verify Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/email/verify/:token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "email",
+                "verify",
+                ":token"
+              ],
+              "variable": [
+                {
+                  "key": "token",
+                  "value": "paste-64-char-token-from-verification-email",
+                  "description": "64-character hex token from the verification email link"
+                }
+              ]
+            },
+            "description": "Verify a B2B customer's email address using the token from the verification email."
+          }
+        },
+        {
+          "name": "Resend Verification Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"acme@company.in\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/email/resend",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "email",
+                "resend"
+              ]
+            },
+            "description": "Resend the email verification link to a B2B customer."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Profile",
+      "description": "Authenticated customer profile management.",
+      "item": [
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp\",\n  \"email\": \"acme@company.in\",\n  \"gst_number\": \"29ABCDE1234F1Z5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            },
+            "description": "Update the authenticated customer's profile. All fields are optional."
+          }
+        },
+        {
+          "name": "Get My Addresses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "addresses"
+              ]
+            },
+            "description": "Returns all distinct service-location addresses previously used by the authenticated customer."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Enquiries",
+      "description": "Customer-facing booking (enquiry) endpoints. Requires: Authorization: Bearer {{access_token}}",
+      "item": [
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has booking_id\", () => pm.expect(json.data.booking_id).to.match(/^FMW-\\d{8}-\\d{4}$/));",
+                  "if (json.data.id) pm.collectionVariables.set('enquiry_id', json.data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service_id\": 1,\n  \"property_type\": \"Highrise\",\n  \"blueprint_id\": {{blueprint_id}},\n  \"location\": {\n    \"latitude\": 12.9716,\n    \"longitude\": 77.5946,\n    \"address\": \"Tower A, Brigade Gateway, Bengaluru - 560055\",\n    \"city\": \"Bangalore\"\n  },\n  \"billing\": {\n    \"name\": \"Prestige Builders Pvt Ltd\",\n    \"point_of_contact\": \"Ravi Shankar\",\n    \"gst_number\": \"29ABCDE1234F1Z5\",\n    \"phone\": \"9876543210\",\n    \"email\": \"ravi@prestige.com\",\n    \"address\": \"Brigade Gateway, Bengaluru - 560055\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/enquiries",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "enquiries"
+              ]
+            },
+            "description": "Creates a booking for both B2C and B2B customers in a single step. Saves `enquiry_id` to collection variable on success."
+          }
+        },
+        {
+          "name": "List My Bookings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has items array\", () => pm.expect(data.items).to.be.an('array'));",
+                  "pm.test(\"Has meta\", () => pm.expect(data.meta).to.have.all.keys('current_page','per_page','total','last_page'));",
+                  "if (data.items.length > 0) {",
+                  "  pm.collectionVariables.set('enquiry_id', data.items[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/enquiries?page=1&limit=20&sort=created_at&order=desc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "enquiries"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "created_at"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": "List all bookings placed by the authenticated customer."
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has booking_id\", () => pm.expect(data.booking_id).to.match(/^FMW-\\d{8}-\\d{4}$/));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/enquiries/{{enquiry_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "enquiries",
+                "{{enquiry_id}}"
+              ]
+            },
+            "description": "Fetch a single booking by ID."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Blueprints",
+      "description": "Blueprint CRUD for authenticated customers. Requires: Authorization: Bearer {{access_token}}",
+      "item": [
+        {
+          "name": "Get All Blueprints",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success true\", () => pm.expect(json.success).to.be.true);",
+                  "pm.test(\"data is array\", () => pm.expect(json.data).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/blueprints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blueprints"
+              ]
+            },
+            "description": "Returns all blueprints belonging to the authenticated customer."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Blueprint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has blueprint id\", () => pm.expect(json.data.id).to.be.a('number'));",
+                  "pm.collectionVariables.set(\"blueprint_id\", json.data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"societyName\": \"Brigade Gateway\",\n  \"towerCount\": 4,\n  \"floorsPerTower\": 20,\n  \"flatsPerFloor\": 4,\n  \"includeGroundFloor\": false,\n  \"parkingFloors\": 2,\n  \"officeFloors\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/blueprints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blueprints"
+              ]
+            },
+            "description": "Creates a new blueprint. `towers` JSON is auto-generated server-side. Saves `blueprint_id` to collection variable."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Blueprint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has id\", () => pm.expect(data.id).to.be.a('number'));",
+                  "pm.test(\"Has towers\", () => pm.expect(data.towers).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/blueprints/{{blueprint_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blueprints",
+                "{{blueprint_id}}"
+              ]
+            },
+            "description": "Fetch a single blueprint by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Blueprint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"societyName\": \"Brigade Gateway (Revised)\",\n  \"towerCount\": 5,\n  \"floorsPerTower\": 20,\n  \"flatsPerFloor\": 4,\n  \"includeGroundFloor\": false,\n  \"parkingFloors\": 2,\n  \"officeFloors\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/blueprints/{{blueprint_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blueprints",
+                "{{blueprint_id}}"
+              ]
+            },
+            "description": "Update a blueprint."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Blueprint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/blueprints/{{blueprint_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blueprints",
+                "{{blueprint_id}}"
+              ]
+            },
+            "description": "Delete a blueprint by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Blueprint Photos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"data is array\", () => pm.expect(data).to.be.an('array'));",
+                  "if (data && data.length > 0) pm.collectionVariables.set('blueprint_photo_id', data[0].id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photos[]",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/enquiries/{{enquiry_id}}/blueprint/photos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint",
+                "photos"
+              ]
+            },
+            "description": "Upload one or more photos for an enquiry's blueprint (multipart/form-data). Accepts JPG/PNG, max 10MB each. Saves first photo ID to blueprint_photo_id."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Blueprint Photos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/enquiries/{{enquiry_id}}/blueprint/photos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint",
+                "photos"
+              ]
+            },
+            "description": "List all blueprint photos for a given enquiry/booking."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Blueprint Photo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/enquiries/{{enquiry_id}}/blueprint/photos/{{blueprint_photo_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint",
+                "photos",
+                "{{blueprint_photo_id}}"
+              ]
+            },
+            "description": "Delete a specific blueprint photo by enquiry/booking ID. Also removes the file from storage."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Blueprint by Enquiry ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has id\", () => pm.expect(data.id).to.be.a('number'));",
+                  "pm.test(\"Has towers\", () => pm.expect(data.towers).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/enquiries/{{enquiry_id}}/blueprint",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint"
+              ]
+            },
+            "description": "Fetch the blueprint linked to an enquiry. NOTE: testing only - this reuses the Admin handler and is NOT scoped to the authenticated customer, so any id is accessible."
+          },
+          "response": []
+        },
+        {
+          "name": "Link Blueprint to Enquiry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Returns blueprint_id\", () => pm.expect(pm.response.json().data.blueprint_id).to.be.a('number'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blueprint_id\": {{blueprint_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/enquiries/{{enquiry_id}}/blueprint",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint"
+              ]
+            },
+            "description": "Link an existing blueprint to an enquiry. Returns 409 if one is already linked. NOTE: testing only - this reuses the Admin handler and is NOT scoped to the authenticated customer, so any id is accessible."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customer Project Stages",
+      "description": "Project stage records exposed to the customer guard for testing. These routes reuse the Admin\\ProjectStageController as-is and are NOT scoped to the authenticated customer - any project stage id is readable, writable and deletable by any logged-in customer.",
+      "item": [
+        {
+          "name": "Get Project Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has id\", () => pm.expect(data.id).to.be.a('number'));",
+                  "pm.test(\"Has towers\", () => pm.expect(data.towers).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/project-stages/{{project_stage_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "project-stages",
+                "{{project_stage_id}}"
+              ]
+            },
+            "description": "Fetch a single project stage record by ID. NOTE: testing only - this reuses the Admin handler and is NOT scoped to the authenticated customer, so any id is accessible."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"towers\": [\n    {\n      \"name\": \"Tower 1\",\n      \"floors\": [\n        {\n          \"level\": 1,\n          \"label\": \"Floor 1\",\n          \"type\": \"residential\",\n          \"flats\": [\n            {\n              \"name\": \"101\",\n              \"apertures\": [\n                {\n                  \"label\": \"Living Room Window\",\n                  \"width_mm\": 1250,\n                  \"height_mm\": 950\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/project-stages/{{project_stage_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "project-stages",
+                "{{project_stage_id}}"
+              ]
+            },
+            "description": "Update the shared towers JSON data for a project stage record. NOTE: testing only - this reuses the Admin handler and is NOT scoped to the authenticated customer, so any id is accessible."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/project-stages/{{project_stage_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "project-stages",
+                "{{project_stage_id}}"
+              ]
+            },
+            "description": "Delete a project stage record. NOTE: testing only - this reuses the Admin handler and is NOT scoped to the authenticated customer, so any id is accessible."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Auth",
+      "description": "Admin authentication. Login returns admin_access_token.",
+      "item": [
+        {
+          "name": "Register (Self-Signup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@fixmywindow.in\",\n  \"phone\": \"9876543210\",\n  \"password\": \"Secret@123\",\n  \"role\": \"technician\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Self-signup for new team members. Creates account with `is_active = false`. Must be approved before login."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has access_token\", () => pm.expect(json.data && json.data.access_token).to.be.a('string'));",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.environment.set('admin_access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data && json.data.refresh_token) {",
+                  "  pm.environment.set('admin_refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@fixmywindow.in\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login as admin staff. Auto-saves `admin_access_token` and `admin_refresh_token`.\n\n**Seeded credentials:**\n- Email: admin@fixmywindow.in\n- Password: Admin@1234"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.environment.set('admin_access_token', json.data.access_token);",
+                  "}",
+                  "if (json.data && json.data.refresh_token) {",
+                  "  pm.environment.set('admin_refresh_token', json.data.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{admin_refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/refresh-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "description": "Exchange admin refresh token for a new access token."
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.environment.set('admin_access_token', '');",
+                  "pm.environment.set('admin_refresh_token', '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{admin_refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout admin. Revokes the refresh token and invalidates the JWT."
+          }
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"Admin@1234\",\n  \"new_password\": \"NewPass@5678\",\n  \"new_password_confirmation\": \"NewPass@5678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/change-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "change-password"
+              ]
+            },
+            "description": "Change password for the currently logged-in admin."
+          }
+        },
+        {
+          "name": "Verify Email (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/auth/email/verify/:token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "email",
+                "verify",
+                ":token"
+              ],
+              "variable": [
+                {
+                  "key": "token",
+                  "value": "paste-64-char-token-from-verification-email",
+                  "description": "64-character hex token from the verification email link"
+                }
+              ]
+            },
+            "description": "Verify an admin user's email address using the token from the verification email."
+          }
+        },
+        {
+          "name": "Resend Verification Email (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/auth/email/resend",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "auth",
+                "email",
+                "resend"
+              ]
+            },
+            "description": "Resend the verification email to the currently logged-in admin user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Users",
+      "description": "Staff/user management. Requires ops_admin role. Authorization: Bearer {{admin_access_token}}",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@fixmywindow.in\",\n  \"phone\": \"9123456789\",\n  \"password\": \"Secret@123\",\n  \"role\": \"technician\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            },
+            "description": "Create a new admin staff account directly (created with `is_active = true`)."
+          }
+        },
+        {
+          "name": "Approve User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/:id/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                ":id",
+                "approve"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Approve a pending self-signup user. Sets `is_active = true`."
+          }
+        },
+        {
+          "name": "Reject User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/:id/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                ":id",
+                "reject"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Reject a pending self-signup user. Sends rejection email then deletes the record."
+          }
+        },
+        {
+          "name": "Get Active Staff",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/staff",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "staff"
+              ]
+            },
+            "description": "Returns all active ops_admin, supervisor, and technician users with name, phone, and role."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Staff By Role",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/by-role?role=ops_manager&page=1&limit=20&sort=name&order=asc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "by-role"
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "ops_manager",
+                  "description": "Optional. One of: ops_manager, supervisor, technician. Only ops_admin may use this filter. If omitted, ops_admin gets all staff across the three roles combined; any other role always gets only their own record regardless of this param."
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "name",
+                  "description": "name or created_at"
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "description": "asc or desc"
+                }
+              ]
+            },
+            "description": "ops_admin: returns paginated staff (optionally filtered to one role) with project stats and active enquiry numbers; omitting role returns all staff. ops_manager/supervisor/technician: always returns only their own record/stats, regardless of the role param."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Has items array\", () => pm.expect(pm.response.json().data.items).to.be.an('array'));",
+                  "pm.test(\"Has meta\", () => pm.expect(pm.response.json().data.meta).to.be.an('object'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/users/pending?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "pending"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all admin users pending approval (is_active = false)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Customers",
+      "description": "Customer master data with their booking history. Accessible by all internal roles (ops_admin, ops_manager, supervisor, technician). Authorization: Bearer {{admin_access_token}}",
+      "item": [
+        {
+          "name": "List All Customers With Bookings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has items array\", () => pm.expect(data.items).to.be.an('array'));",
+                  "pm.test(\"Has meta\", () => pm.expect(data.meta).to.have.all.keys('current_page','per_page','total','last_page'));",
+                  "if (data.items.length > 0) {",
+                  "  pm.collectionVariables.set('customer_id', data.items[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/customers?page=1&limit=20&sort=created_at&order=desc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "created_at",
+                  "description": "created_at or name"
+                },
+                {
+                  "key": "order",
+                  "value": "desc",
+                  "description": "asc or desc"
+                }
+              ]
+            },
+            "description": "Returns a paginated list of all customers along with their booking (enquiry) details \u2014 booking id, service, status, payment status, and progress."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Enquiries",
+      "description": "All enquiry and project-execution operations in one place. Requires: Authorization: Bearer {{admin_access_token}}",
+      "item": [
+        {
+          "name": "Get Enquiry Statuses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Returns array\", () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiry-statuses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiry-statuses"
+              ]
+            },
+            "description": "Returns all active project statuses ordered by sort_order."
+          },
+          "response": []
+        },
+        {
+          "name": "List All Enquiries",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has items array\", () => pm.expect(data.items).to.be.an('array'));",
+                  "pm.test(\"Has meta\", () => pm.expect(data.meta).to.have.all.keys('current_page','per_page','total','last_page'));",
+                  "if (data.items.length > 0) {",
+                  "  pm.collectionVariables.set('enquiry_id', data.items[0].id);",
+                  "  pm.test(\"Item has property_type\", () => pm.expect(data.items[0]).to.have.property('property_type'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries?page=1&limit=20&sort=created_at&order=desc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "created_at"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            },
+            "description": "List all customer bookings across the platform (admin view)."
+          }
+        },
+        {
+          "name": "Get Enquiry by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has booking_id\", () => pm.expect(data.booking_id).to.match(/^FMW-\\d{8}-\\d{4}$/));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/{{enquiry_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                "{{enquiry_id}}"
+              ]
+            },
+            "description": "Fetch a single booking's full detail by ID (admin view)."
+          }
+        },
+        {
+          "name": "PUT Update Enquiry Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"assigned\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/:id/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                ":id",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update the overall status of an enquiry. Allowed values: assigned, in_progress, completed, cancelled. Writes a timeline entry in the same transaction."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Staff",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ops_manager\": [\n    1\n  ],\n  \"supervisor\": [\n    3\n  ],\n  \"survey\": [\n    4,\n    5\n  ],\n  \"measurement\": [\n    6\n  ],\n  \"quality_check\": [\n    8\n  ],\n  \"installation\": [\n    7\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/:id/assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                ":id",
+                "assign"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Full-replace all section assignments for an enquiry. Allowed sections: ops_manager, supervisor, survey, measurement, quality_check, installation."
+          }
+        },
+        {
+          "name": "Get Team",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/:id/team",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                ":id",
+                "team"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "List all staff currently assigned to a project."
+          }
+        },
+        {
+          "name": "Create Enquiry Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enquiry_id\": 1,\n  \"content\": \"Customer requested a callback after 5pm.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/enquiry-notes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiry-notes"
+              ]
+            },
+            "description": "Add an internal note to an enquiry."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Notes by Enquiry",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/:id/notes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                ":id",
+                "notes"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "List all notes recorded against an enquiry."
+          },
+          "response": []
+        },
+        {
+          "name": "Link Blueprint to Enquiry",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blueprint_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/:id/blueprint",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                ":id",
+                "blueprint"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{enquiry_id}}"
+                }
+              ]
+            },
+            "description": "Links a blueprint to an enquiry. Returns 409 if the enquiry already has a blueprint linked."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Enquiry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{enquiry_id}}"
+                }
+              ]
+            },
+            "description": "Permanently deletes an enquiry and cascades to its assignments, timeline, survey, project stage, notes and blueprint photos (files removed from storage too). The linked blueprint itself is not deleted, only unlinked. ops_admin/ops_manager only."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Surveys",
+      "description": "Survey management: create, checklist, and Go/No-Go decision. Requires ops_admin or ops_manager role.",
+      "item": [
+        {
+          "name": "Create Survey",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "if (data && data.id) pm.collectionVariables.set('survey_id', data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enquiry_id\": 1,\n  \"surveyor_id\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/surveys",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "surveys"
+              ]
+            },
+            "description": "Create a new survey linked to an enquiry. Sets the enquiry status to `survey_initiated` and writes `Inspection Scheduled` to the timeline, in the same transaction. Saves `survey_id` on success."
+          }
+        },
+        {
+          "name": "List Surveys (+ filter by enquiry)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const items = pm.response.json().data?.items;",
+                  "if (items && items.length > 0) {",
+                  "  pm.collectionVariables.set('survey_id', items[0].id);",
+                  "  console.log('survey_id set to', items[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/surveys?enquiry_id={{enquiry_id}}&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "surveys"
+              ],
+              "query": [
+                {
+                  "key": "enquiry_id",
+                  "value": "{{enquiry_id}}",
+                  "description": "Filter surveys by enquiry."
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Paginated list of surveys. Filter by `enquiry_id` to find the survey for a specific enquiry. Auto-saves `survey_id` from first result."
+          }
+        },
+        {
+          "name": "Get Survey",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/surveys/{{survey_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "surveys",
+                "{{survey_id}}"
+              ]
+            },
+            "description": "Get full survey details including all sections and current outcome."
+          }
+        },
+        {
+          "name": "Update Survey Checklist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gonogo_matrix\": [\n    { \"item_key\": \"revenue_potential\", \"category\": \"commercial\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"contract_terms\", \"category\": \"commercial\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"tech_specs_clear\", \"category\": \"technical\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"installation_feasibility\", \"category\": \"technical\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"resources_available\", \"category\": \"operational\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"timeline_feasible\", \"category\": \"operational\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"client_relationship\", \"category\": \"strategic\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"strategic_alignment\", \"category\": \"strategic\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"risk_level_acceptable\", \"category\": \"risk\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"regulatory_compliance\", \"category\": \"risk\", \"result\": \"yes\", \"remarks\": \"\" }\n  ],\n  \"feasibility\": [\n    { \"item_key\": \"crane_access\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"vacuum_lifter\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"chemical_anchor\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"dust_free_drilling\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"subframe_requirement\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"grill_removal\", \"result\": \"n_a\", \"remarks\": \"No grills present\" },\n    { \"item_key\": \"manual_lifting\", \"result\": \"yes\", \"remarks\": \"\" },\n    { \"item_key\": \"staircase_access\", \"result\": \"yes\", \"remarks\": \"\" }\n  ],\n  \"risk_register\": [\n    { \"risk_type\": \"weather\", \"severity\": \"low\", \"mitigation_plan\": \"Covered work area arranged\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/surveys/{{survey_id}}/checklist",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "surveys",
+                "{{survey_id}}",
+                "checklist"
+              ]
+            },
+            "description": "Save all three survey sections in one shot.\n\n**result** values: `yes`, `no`, `n_a`, `n_r`\n\n**severity** values: `high`, `medium`, `low`"
+          }
+        },
+        {
+          "name": "Submit Go/No-Go Decision",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"outcome\": \"go\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/surveys/{{survey_id}}/gonogo",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "surveys",
+                "{{survey_id}}",
+                "gonogo"
+              ]
+            },
+            "description": "Submit the final Go/No-Go decision. `go` creates a project; `no_go` rejects; `hold` saves without deciding."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Blueprints",
+      "description": "Admin blueprint operations. Requires: Authorization: Bearer {{admin_access_token}}",
+      "item": [
+        {
+          "name": "Get Blueprint by Enquiry ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has id\", () => pm.expect(data.id).to.be.a('number'));",
+                  "pm.test(\"Has towers\", () => pm.expect(data.towers).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/{{enquiry_id}}/blueprint",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint"
+              ]
+            },
+            "description": "Fetch the blueprint for a given enquiry (admin view)."
+          }
+        },
+        {
+          "name": "Create Blueprint for Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"Has id\", () => pm.expect(data.id).to.be.a('number'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"societyName\": \"Silver Oaks\",\n  \"towerCount\": 2,\n  \"floorsPerTower\": 20,\n  \"flatsPerFloor\": 4,\n  \"includeGroundFloor\": false,\n  \"parkingFloors\": 0,\n  \"officeFloors\": 0,\n  \"towers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/customers/:customer_id/blueprints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "customers",
+                ":customer_id",
+                "blueprints"
+              ],
+              "variable": [
+                {
+                  "key": "customer_id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Create a blueprint for a customer (admin)."
+          }
+        },
+        {
+          "name": "Update Blueprint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"societyName\": \"Silver Oaks\",\n  \"towerCount\": 2,\n  \"floorsPerTower\": 20,\n  \"flatsPerFloor\": 4,\n  \"includeGroundFloor\": false,\n  \"parkingFloors\": 0,\n  \"officeFloors\": 0,\n  \"towers\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/blueprints/{{blueprint_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "blueprints",
+                "{{blueprint_id}}"
+              ]
+            },
+            "description": "Update the blueprint (admin override)."
+          }
+        },
+        {
+          "name": "Get All Blueprints by Customer ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/customers/:customer_id/blueprints",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "customers",
+                ":customer_id",
+                "blueprints"
+              ],
+              "variable": [
+                {
+                  "key": "customer_id",
+                  "value": "1",
+                  "description": "The customer's ID"
+                }
+              ]
+            },
+            "description": "Fetch all blueprints created by a specific customer (admin view)."
+          }
+        },
+        {
+          "name": "Delete Blueprint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/blueprints/{{blueprint_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "blueprints",
+                "{{blueprint_id}}"
+              ]
+            },
+            "description": "Delete the blueprint by ID (admin)."
+          }
+        },
+        {
+          "name": "Upload Blueprint Photos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "pm.test(\"data is array\", () => pm.expect(data).to.be.an('array'));",
+                  "if (data && data.length > 0) pm.collectionVariables.set('blueprint_photo_id', data[0].id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photos[]",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/{{enquiry_id}}/blueprint/photos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint",
+                "photos"
+              ]
+            },
+            "description": "Upload one or more photos for an enquiry's blueprint (admin). Multipart/form-data. Accepts JPG/PNG, max 10MB each."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Blueprint Photos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/{{enquiry_id}}/blueprint/photos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint",
+                "photos"
+              ]
+            },
+            "description": "List all blueprint photos for a given enquiry/booking (admin view)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Blueprint Photo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/enquiries/{{enquiry_id}}/blueprint/photos/{{blueprint_photo_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "enquiries",
+                "{{enquiry_id}}",
+                "blueprint",
+                "photos",
+                "{{blueprint_photo_id}}"
+              ]
+            },
+            "description": "Delete a specific blueprint photo by enquiry/booking ID (admin). Also removes the file from storage."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Project Stages",
+      "item": [
+        {
+          "name": "Create Project Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const data = pm.response.json().data;",
+                  "if (data && data.id) pm.collectionVariables.set('project_stage_id', data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enquiry_id\": 1,\n  \"towers\": [\n    {\n      \"name\": \"Tower 1\",\n      \"floors\": [\n        {\n          \"level\": 1,\n          \"label\": \"Floor 1\",\n          \"type\": \"residential\",\n          \"flats\": [\n            {\n              \"name\": \"101\",\n              \"apertures\": [\n                {\n                  \"label\": \"Living Room Window\",\n                  \"width_mm\": 1200,\n                  \"height_mm\": 900\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/project-stages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "project-stages"
+              ]
+            },
+            "description": "Create a project stage record linked to an enquiry. The same `towers` JSON shape is shared and updated across measurement, quality_check, and installation \u2014 there is no `type` distinguishing them. Saves `project_stage_id` on success."
+          }
+        },
+        {
+          "name": "Get Project Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/project-stages/{{project_stage_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "project-stages",
+                "{{project_stage_id}}"
+              ]
+            },
+            "description": "Retrieve a project stage record by ID."
+          }
+        },
+        {
+          "name": "Update Project Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"towers\": [\n    {\n      \"name\": \"Tower 1\",\n      \"floors\": [\n        {\n          \"level\": 1,\n          \"label\": \"Floor 1\",\n          \"type\": \"residential\",\n          \"flats\": [\n            {\n              \"name\": \"101\",\n              \"apertures\": [\n                {\n                  \"label\": \"Living Room Window\",\n                  \"width_mm\": 1250,\n                  \"height_mm\": 950\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/project-stages/{{project_stage_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "project-stages",
+                "{{project_stage_id}}"
+              ]
+            },
+            "description": "Update the shared towers JSON data for a project stage record."
+          }
+        },
+        {
+          "name": "Delete Project Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/project-stages/{{project_stage_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "project-stages",
+                "{{project_stage_id}}"
+              ]
+            },
+            "description": "Delete a project stage record by ID."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Success true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Has total_requests\", () => pm.expect(pm.response.json().data.total_requests).to.be.an(\"object\"));",
+                  "pm.test(\"Has status buckets\", () => {",
+                  "    const d = pm.response.json().data;",
+                  "    ['pending', 'in_progress', 'completed', 'cancelled'].forEach(k => pm.expect(d[k]).to.be.a(\"number\"));",
+                  "});",
+                  "pm.test(\"Has revenue\", () => pm.expect(pm.response.json().data.revenue).to.be.an(\"object\"));",
+                  "pm.test(\"Has weekly_revenue with 7 days\", () => pm.expect(pm.response.json().data.weekly_revenue).to.have.lengthOf(7));",
+                  "pm.test(\"Has recent_activity\", () => pm.expect(pm.response.json().data.recent_activity).to.be.an(\"array\"));",
+                  "pm.test(\"Has team_overview\", () => pm.expect(pm.response.json().data.team_overview).to.be.an(\"object\"));",
+                  "pm.test(\"Has urgent_requests\", () => pm.expect(pm.response.json().data.urgent_requests).to.be.an(\"array\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard?activity_limit=10&urgent_limit=4",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "dashboard"
+              ],
+              "query": [
+                {
+                  "key": "activity_limit",
+                  "value": "10",
+                  "description": "Max recent_activity items to return (default 10, max 50).",
+                  "disabled": true
+                },
+                {
+                  "key": "urgent_limit",
+                  "value": "4",
+                  "description": "Max urgent_requests items to return (default 4, max 20).",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Admin dashboard: hero totals (today/week/rolling week/month), status donut (pending/in_progress/completed/cancelled), revenue cards with trend %, last-7-day revenue bar chart, recent activity feed (project_timeline-backed), team overview headcounts, and SLA-derived urgent requests list."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
