@@ -22,6 +22,7 @@ class SurveyResource extends JsonResource
             'gonogo_matrix'  => $this->gonogo_matrix,
             'feasibility'    => $this->feasibility,
             'risk_register'  => $this->risk_register,
+            'site_photos'    => $this->site_photos,
             'created_at'     => $this->created_at?->toIso8601String(),
             'updated_at'     => $this->updated_at?->toIso8601String(),
         ];

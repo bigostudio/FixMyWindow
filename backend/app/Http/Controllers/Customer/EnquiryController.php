@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\InitiateEnquiryRequest;
 use App\Http\Resources\CustomerAddressResource;
+use App\Http\Resources\EnquiryDetailResource;
 use App\Http\Resources\EnquiryResource;
 use App\Services\EnquiryService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -45,7 +46,7 @@ class EnquiryController extends Controller
             return response()->json(['message' => 'Resource not found'], 404);
         }
 
-        return response()->json((new EnquiryResource($enquiry))->resolve());
+        return response()->json((new EnquiryDetailResource($enquiry))->resolve());
     }
 
     public function addresses(): JsonResponse

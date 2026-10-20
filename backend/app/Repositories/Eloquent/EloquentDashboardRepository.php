@@ -3,160 +3,128 @@
 namespace App\Repositories\Eloquent;
 
 use App\Repositories\Interfaces\DashboardRepositoryInterface;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class EloquentDashboardRepository implements DashboardRepositoryInterface
 {
-    public function getEnquirySummary(): object
+    private const DATETIME_FORMAT = 'Y-m-d H:i:s';
+
+    public function getRequestCounts(CarbonInterface $todayStart, CarbonInterface $weekStart, CarbonInterface $monthStart): object
     {
         return DB::selectOne("
             SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) AS today,
-                SUM(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) THEN 1 ELSE 0 END) AS this_week,
-                SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE()) THEN 1 ELSE 0 END) AS this_month
+                SUM(CASE WHEN created_at >= :today_start THEN 1 ELSE 0 END) AS today,
+                SUM(CASE WHEN created_at >= :week_start THEN 1 ELSE 0 END) AS week,
+                SUM(CASE WHEN created_at >= :month_start THEN 1 ELSE 0 END) AS month
             FROM enquiries
-            WHERE enquiry_number IS NOT NULL
-        ");
+            WHERE status != 'draft'
+        ", [
+            'today_start' => $todayStart->format(self::DATETIME_FORMAT),
+            'week_start'  => $weekStart->format(self::DATETIME_FORMAT),
+            'month_start' => $monthStart->format(self::DATETIME_FORMAT),
+        ]);
     }
 
-    public function getCustomerSummary(): object
+    public function getStatusBucketCounts(): object
     {
         return DB::selectOne("
             SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN type = 'b2c' THEN 1 ELSE 0 END) AS b2c,
-                SUM(CASE WHEN type = 'b2b' THEN 1 ELSE 0 END) AS b2b
-            FROM customers
-        ");
-    }
-
-    public function getRevenueSummary(): object
-    {
-        return DB::selectOne("
-            SELECT
-                COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN payment_amount ELSE 0 END), 0) AS collected,
-                SUM(CASE WHEN payment_status = 'pending' THEN 1 ELSE 0 END) AS pending_count,
-                COALESCE(SUM(CASE WHEN payment_status = 'pending' THEN payment_amount ELSE 0 END), 0) AS pending_amount
+                SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status IN (
+                    'survey_initiated', 'survey_completed', 'measurement_initiated', 'measurement_completed',
+                    'quotation_generated', 'quotation_approved', 'installation_initiated', 'installation_completed',
+                    'quality_check_initiated', 'quality_check_completed', 'on_hold'
+                ) THEN 1 ELSE 0 END) AS in_progress,
+                SUM(CASE WHEN status = 'handovered' THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
             FROM enquiries
-            WHERE enquiry_number IS NOT NULL
+            WHERE status != 'draft'
         ");
     }
 
-    public function getContactUnreadCount(): int
-    {
-        return (int) DB::table('contact_submissions')
-            ->where('status', 'new')
-            ->count();
+    public function getRevenueMetrics(
+        CarbonInterface $todayStart,
+        CarbonInterface $yesterdayStart,
+        CarbonInterface $weekStart,
+        CarbonInterface $prevWeekStart,
+        CarbonInterface $monthStart,
+        CarbonInterface $prevMonthStart,
+    ): object {
+        return DB::selectOne("
+            SELECT
+                COALESCE(SUM(CASE WHEN payment_status = 'paid' AND paid_at >= :today_start THEN payment_amount ELSE 0 END), 0) AS today,
+                COALESCE(SUM(CASE WHEN payment_status = 'paid' AND paid_at >= :yesterday_start AND paid_at < :today_start2 THEN payment_amount ELSE 0 END), 0) AS yesterday,
+                COALESCE(SUM(CASE WHEN payment_status = 'paid' AND paid_at >= :week_start THEN payment_amount ELSE 0 END), 0) AS week,
+                COALESCE(SUM(CASE WHEN payment_status = 'paid' AND paid_at >= :prev_week_start AND paid_at < :week_start2 THEN payment_amount ELSE 0 END), 0) AS prev_week,
+                COALESCE(SUM(CASE WHEN payment_status = 'paid' AND paid_at >= :month_start THEN payment_amount ELSE 0 END), 0) AS month,
+                COALESCE(SUM(CASE WHEN payment_status = 'paid' AND paid_at >= :prev_month_start AND paid_at < :month_start2 THEN payment_amount ELSE 0 END), 0) AS prev_month
+            FROM enquiries
+        ", [
+            'today_start'      => $todayStart->format(self::DATETIME_FORMAT),
+            'today_start2'     => $todayStart->format(self::DATETIME_FORMAT),
+            'yesterday_start'  => $yesterdayStart->format(self::DATETIME_FORMAT),
+            'week_start'       => $weekStart->format(self::DATETIME_FORMAT),
+            'week_start2'      => $weekStart->format(self::DATETIME_FORMAT),
+            'prev_week_start'  => $prevWeekStart->format(self::DATETIME_FORMAT),
+            'month_start'      => $monthStart->format(self::DATETIME_FORMAT),
+            'month_start2'     => $monthStart->format(self::DATETIME_FORMAT),
+            'prev_month_start' => $prevMonthStart->format(self::DATETIME_FORMAT),
+        ]);
     }
 
-    public function getEnquiryPipeline(): array
+    public function getPaidRevenueRows(CarbonInterface $since): array
     {
         return DB::select("
-            SELECT
-                e.status,
-                COALESCE(ps.label, e.status) AS label,
-                COALESCE(ps.sort_order, 999) AS sort_order,
-                COUNT(*) AS count
-            FROM enquiries e
-            LEFT JOIN project_statuses ps ON ps.code = e.status
-            WHERE e.enquiry_number IS NOT NULL
-            GROUP BY e.status, ps.label, ps.sort_order
-            ORDER BY COALESCE(ps.sort_order, 999)
-        ");
-    }
-
-    public function getSurveySummary(): object
-    {
-        return DB::selectOne("
-            SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN outcome = 'go' THEN 1 ELSE 0 END) AS go_count,
-                SUM(CASE WHEN outcome = 'hold' THEN 1 ELSE 0 END) AS hold_count,
-                SUM(CASE WHEN outcome = 'no_go' THEN 1 ELSE 0 END) AS no_go_count,
-                SUM(CASE WHEN outcome IS NULL THEN 1 ELSE 0 END) AS pending_count
-            FROM surveys
-        ");
-    }
-
-    public function getEnquiryBreakdown(): object
-    {
-        return DB::selectOne("
-            SELECT
-                SUM(CASE WHEN type = 'b2c' THEN 1 ELSE 0 END) AS b2c,
-                SUM(CASE WHEN type = 'b2b' THEN 1 ELSE 0 END) AS b2b,
-                SUM(CASE WHEN material_type = 'upvc' THEN 1 ELSE 0 END) AS upvc,
-                SUM(CASE WHEN material_type = 'aluminium' THEN 1 ELSE 0 END) AS aluminium,
-                SUM(CASE WHEN material_type = 'facade' THEN 1 ELSE 0 END) AS facade,
-                SUM(CASE WHEN property_type = 'home' THEN 1 ELSE 0 END) AS home,
-                SUM(CASE WHEN property_type = 'Highrise' THEN 1 ELSE 0 END) AS highrise
+            SELECT paid_at, payment_amount
             FROM enquiries
-            WHERE enquiry_number IS NOT NULL
-        ");
+            WHERE payment_status = 'paid' AND paid_at >= ?
+        ", [$since->format(self::DATETIME_FORMAT)]);
     }
 
-    public function getTopCities(int $limit = 10): array
+    public function getRecentActivity(int $limit): array
     {
         return DB::select("
-            SELECT city, COUNT(*) AS count
-            FROM enquiries
-            WHERE enquiry_number IS NOT NULL
-            GROUP BY city
-            ORDER BY count DESC
-            LIMIT ?
-        ", [$limit]);
-    }
-
-    public function getStaffSummary(): array
-    {
-        $totals = DB::selectOne("
-            SELECT
-                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS total_active,
-                SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) AS pending_approvals
-            FROM users
-            WHERE deleted_at IS NULL
-        ");
-
-        $byRole = DB::select("
-            SELECT
-                u.role,
-                COUNT(DISTINCT u.id) AS count,
-                COUNT(DISTINCT CASE
-                    WHEN e.status NOT IN ('handovered', 'cancelled')
-                    AND e.enquiry_number IS NOT NULL
-                    THEN e.id
-                END) AS active_assignments
-            FROM users u
-            LEFT JOIN project_assignments pa ON pa.user_id = u.id
-            LEFT JOIN enquiries e ON e.id = pa.enquiry_id
-            WHERE u.is_active = 1 AND u.deleted_at IS NULL
-            GROUP BY u.role
-            ORDER BY u.role
-        ");
-
-        return ['totals' => $totals, 'by_role' => $byRole];
-    }
-
-    public function getRecentActivity(int $limit = 10): array
-    {
-        return DB::select("
-            SELECT pt.status, pt.actor_name, pt.created_at, e.enquiry_number
+            SELECT pt.id, pt.status, pt.description, pt.actor_name, pt.created_at,
+                   e.enquiry_number, c.name AS customer_name, s.name AS service_name
             FROM project_timeline pt
             LEFT JOIN enquiries e ON e.id = pt.enquiry_id
+            LEFT JOIN customers c ON c.id = e.customer_id
+            LEFT JOIN services s ON s.id = e.service_id
             ORDER BY pt.created_at DESC
-            LIMIT ?
-        ", [$limit]);
+            LIMIT " . (int) $limit);
     }
 
-    public function getEnquiryTrends(int $months = 6): array
+    public function getTeamOverview(): object
+    {
+        $staff = DB::selectOne("
+            SELECT
+                SUM(CASE WHEN role = 'ops_manager' THEN 1 ELSE 0 END) AS operations_managers,
+                SUM(CASE WHEN role = 'supervisor' THEN 1 ELSE 0 END) AS supervisors,
+                SUM(CASE WHEN role = 'technician' THEN 1 ELSE 0 END) AS technicians
+            FROM users
+            WHERE is_active = 1 AND deleted_at IS NULL
+        ");
+
+        $staff->customers = (int) DB::table('customers')->count();
+
+        return $staff;
+    }
+
+    public function getUrgentRequests(CarbonInterface $highBefore, CarbonInterface $urgentBefore, int $limit): array
     {
         return DB::select("
-            SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS count
-            FROM enquiries
-            WHERE enquiry_number IS NOT NULL
-              AND created_at >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
-            GROUP BY month
-            ORDER BY month ASC
-        ", [$months]);
+            SELECT
+                e.enquiry_number, c.name AS customer_name, s.name AS service_type,
+                CASE WHEN e.created_at < :urgent_before THEN 'urgent' ELSE 'high' END AS priority
+            FROM enquiries e
+            LEFT JOIN customers c ON c.id = e.customer_id
+            LEFT JOIN services s ON s.id = e.service_id
+            WHERE e.status IN ('new', 'survey_initiated') AND e.created_at < :high_before
+            ORDER BY e.created_at DESC
+            LIMIT " . (int) $limit, [
+            'urgent_before' => $urgentBefore->format(self::DATETIME_FORMAT),
+            'high_before'   => $highBefore->format(self::DATETIME_FORMAT),
+        ]);
     }
 }

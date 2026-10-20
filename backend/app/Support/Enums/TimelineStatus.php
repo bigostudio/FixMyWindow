@@ -10,11 +10,14 @@ enum TimelineStatus: string
     case SurveyRejected       = 'Survey Rejected';
     case InspectionScheduled  = 'Inspection Scheduled';
     case InspectionCompleted  = 'Inspection Completed';
+    case MeasurementInitiated = 'Measurement Initiated';
+    case MeasurementCompleted = 'Measurement Completed';
     case QuotationGenerated   = 'Quotation Generated';
     case QuotationApproved    = 'Quotation Approved';
     case WorkOrderCreated     = 'Work Order Created';
     case TeamAssigned         = 'Team Assigned';
     case WorkInProgress       = 'Work In Progress';
+    case InstallationCompleted = 'Installation Completed';
     case QualityCheckInitiated = 'Quality Check Initiated';
     case QualityCheckCompleted = 'Quality Check Completed';
     case OnTrack              = 'On Track';

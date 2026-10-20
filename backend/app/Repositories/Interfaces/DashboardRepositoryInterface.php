@@ -2,27 +2,28 @@
 
 namespace App\Repositories\Interfaces;
 
+use Carbon\CarbonInterface;
+
 interface DashboardRepositoryInterface
 {
-    public function getEnquirySummary(): object;
+    public function getRequestCounts(CarbonInterface $todayStart, CarbonInterface $weekStart, CarbonInterface $monthStart): object;
 
-    public function getCustomerSummary(): object;
+    public function getStatusBucketCounts(): object;
 
-    public function getRevenueSummary(): object;
+    public function getRevenueMetrics(
+        CarbonInterface $todayStart,
+        CarbonInterface $yesterdayStart,
+        CarbonInterface $weekStart,
+        CarbonInterface $prevWeekStart,
+        CarbonInterface $monthStart,
+        CarbonInterface $prevMonthStart,
+    ): object;
 
-    public function getContactUnreadCount(): int;
+    public function getPaidRevenueRows(CarbonInterface $since): array;
 
-    public function getEnquiryPipeline(): array;
+    public function getRecentActivity(int $limit): array;
 
-    public function getSurveySummary(): object;
+    public function getTeamOverview(): object;
 
-    public function getEnquiryBreakdown(): object;
-
-    public function getTopCities(int $limit = 10): array;
-
-    public function getStaffSummary(): array;
-
-    public function getRecentActivity(int $limit = 10): array;
-
-    public function getEnquiryTrends(int $months = 6): array;
+    public function getUrgentRequests(CarbonInterface $highBefore, CarbonInterface $urgentBefore, int $limit): array;
 }

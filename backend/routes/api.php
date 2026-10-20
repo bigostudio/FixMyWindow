@@ -68,6 +68,17 @@ Route::prefix('v1')->group(function () {
         Route::post('enquiries/{id}/blueprint/photos',              [CustomerBlueprintController::class, 'storePhoto']);
         Route::get('enquiries/{id}/blueprint/photos',              [CustomerBlueprintController::class, 'indexPhoto']);
         Route::delete('enquiries/{id}/blueprint/photos/{photoId}', [CustomerBlueprintController::class, 'destroyPhoto']);
+
+        // ─── Testing only — admin handlers exposed to the customer guard ───
+        // These reuse the Admin controllers as-is, so they are NOT scoped to the
+        // authenticated customer: any enquiry / project-stage id is readable and
+        // writable by any logged-in customer. Remove or add ownership checks
+        // before this reaches production.
+        Route::get('enquiries/{id}/blueprint',  [AdminBlueprintController::class, 'showByEnquiry']);
+        Route::put('enquiries/{id}/blueprint',  [AdminEnquiryController::class, 'linkBlueprint']);
+        Route::get('project-stages/{id}',       [AdminProjectStageController::class, 'show']);
+        Route::put('project-stages/{id}',       [AdminProjectStageController::class, 'update']);
+        Route::delete('project-stages/{id}',    [AdminProjectStageController::class, 'destroy']);
     });
 
     // ─── Admin ────────────────────────────────────────────────────────────

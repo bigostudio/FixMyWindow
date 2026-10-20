@@ -7,7 +7,7 @@ use App\Http\Requests\Admin\AssignProjectStaffRequest;
 use App\Http\Requests\Admin\LinkEnquiryBlueprintRequest;
 use App\Http\Requests\Admin\UpdateEnquiryStatusRequest;
 use App\Http\Resources\AdminBookingResource;
-use App\Http\Resources\AdminEnquiryDetailResource;
+use App\Http\Resources\EnquiryDetailResource;
 use App\Services\EnquiryService;
 use App\Services\ProjectAssignmentService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -56,7 +56,7 @@ class EnquiryController extends Controller
             return response()->json(['message' => 'Resource not found'], 404);
         }
 
-        return response()->json((new AdminEnquiryDetailResource($enquiry))->resolve());
+        return response()->json((new EnquiryDetailResource($enquiry))->resolve());
     }
 
     public function updateStatus(UpdateEnquiryStatusRequest $request, string $id): JsonResponse

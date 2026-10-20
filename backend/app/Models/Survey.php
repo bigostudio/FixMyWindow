@@ -20,6 +20,7 @@ class Survey extends Model
         'feasibility',
         'opening_data',
         'risk_register',
+        'site_photos',
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class Survey extends Model
             'feasibility'    => 'array',
             'opening_data'   => 'array',
             'risk_register'  => 'array',
+            'site_photos'    => 'array',
         ];
     }
 

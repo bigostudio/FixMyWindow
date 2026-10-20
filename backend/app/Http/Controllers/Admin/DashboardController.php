@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\DashboardQueryRequest;
 use App\Services\DashboardService;
 use Illuminate\Http\JsonResponse;
 
@@ -12,16 +13,13 @@ class DashboardController extends Controller
         private readonly DashboardService $dashboardService,
     ) {}
 
-    public function index(): JsonResponse
+    public function index(DashboardQueryRequest $request): JsonResponse
     {
-        return response()->json([
-            'summary'         => $this->dashboardService->getSummary(),
-            'pipeline'        => $this->dashboardService->getPipeline(),
-            'surveys'         => $this->dashboardService->getSurveys(),
-            'breakdown'       => $this->dashboardService->getBreakdown(),
-            'staff'           => $this->dashboardService->getStaff(),
-            'recent_activity' => $this->dashboardService->getRecentActivity(),
-            'trends'          => $this->dashboardService->getTrends(),
-        ]);
+        $activityLimit = (int) ($request->validated('activity_limit') ?? 10);
+        $urgentLimit   = (int) ($request->validated('urgent_limit') ?? 4);
+
+        return response()->json(
+            $this->dashboardService->getDashboard($activityLimit, $urgentLimit)
+        );
     }
 }

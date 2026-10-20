@@ -64,6 +64,7 @@ class EnquiryService
                 ->update(['last_value' => $counter, 'updated_at' => now()]);
 
             $enquiryNumber = sprintf('FMW-%s-%04d', now('UTC')->format('Ymd'), $counter);
+            $inspectionFee = $customer->type === CustomerType::B2C ? 1000 : 0;
 
             $enquiry = $this->enquiryRepository->create([
                 'enquiry_number'  => $enquiryNumber,
@@ -78,8 +79,10 @@ class EnquiryService
                 'latitude'        => $data['location']['latitude'],
                 'longitude'       => $data['location']['longitude'],
                 'address'         => $data['location']['address'],
-                'inspection_fee'  => $customer->type === CustomerType::B2C ? 1000 : 0,
+                'inspection_fee'  => $inspectionFee,
                 'payment_status'  => PaymentStatus::Paid->value,
+                'payment_amount'  => $inspectionFee,
+                'paid_at'         => now(),
                 'billing_name'    => $data['billing']['name'],
                 'billing_poc'     => $data['billing']['point_of_contact'] ?? null,
                 'billing_gst'     => $data['billing']['gst_number'] ?? null,
@@ -114,7 +117,7 @@ class EnquiryService
 
     public function getForCustomer(int $enquiryId, int $customerId): Enquiry
     {
-        $enquiry = $this->enquiryRepository->findById($enquiryId);
+        $enquiry = $this->enquiryRepository->findByIdWithRelations($enquiryId);
 
         if (! $enquiry || $enquiry->customer_id !== $customerId) {
             throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
@@ -245,13 +248,18 @@ class EnquiryService
         return match ($status) {
             ProjectStatus::SurveyInitiated       => TimelineStatus::InspectionScheduled,
             ProjectStatus::SurveyCompleted       => TimelineStatus::SurveyPassed,
+            ProjectStatus::MeasurementInitiated  => TimelineStatus::MeasurementInitiated,
+            ProjectStatus::MeasurementCompleted  => TimelineStatus::MeasurementCompleted,
+            ProjectStatus::QuotationGenerated    => TimelineStatus::QuotationGenerated,
+            ProjectStatus::QuotationApproved     => TimelineStatus::QuotationApproved,
             ProjectStatus::InstallationInitiated => TimelineStatus::WorkInProgress,
-            ProjectStatus::InstallationCompleted => TimelineStatus::WorkInProgress,
+            ProjectStatus::InstallationCompleted => TimelineStatus::InstallationCompleted,
             ProjectStatus::QualityCheckInitiated => TimelineStatus::QualityCheckInitiated,
             ProjectStatus::QualityCheckCompleted => TimelineStatus::QualityCheckCompleted,
-            ProjectStatus::Handovered            => TimelineStatus::Completed,
-            ProjectStatus::Cancelled             => TimelineStatus::Cancelled,
-            default                              => TimelineStatus::New,
+            ProjectStatus::Handovered             => TimelineStatus::Completed,
+            ProjectStatus::OnHold                 => TimelineStatus::OnHold,
+            ProjectStatus::Cancelled              => TimelineStatus::Cancelled,
+            default                               => TimelineStatus::New,
         };
     }
 }
